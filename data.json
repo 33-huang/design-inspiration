@@ -8,6 +8,10 @@
     "createdAt": "2025-04-25",
     "images": [
       "images/1_0.jpg"
+    ],
+    "tags": [
+      "t1",
+      "t2"
     ]
   },
   {
