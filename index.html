@@ -472,7 +472,7 @@ async function loadData() {
   const { token, owner, repo, branch } = getSettings();
   // Use raw URL to bypass GitHub's 1MB content API limit
   const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data.json?t=${Date.now()}`;
-  const rawRes = await fetch(rawUrl, { headers: { Authorization: `token ${token}` } });
+  const rawRes = await fetch(rawUrl);
   if (!rawRes.ok) throw new Error(`读取失败 ${rawRes.status}`);
   const items = await rawRes.json();
   // Get SHA separately (contents API always returns sha even for large files)
