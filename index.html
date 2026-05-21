@@ -240,8 +240,9 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 }
 .tag-inline-add input::placeholder { color: #bbb; }
 .tag-inline-add button {
-  background: none; border: none; color: var(--muted); font-size: 18px;
-  cursor: pointer; padding: 0 2px; line-height: 1; flex-shrink: 0;
+  background: #eeecea; color: var(--fg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 7px 11px; font-size: 12px; font-family: inherit;
+  cursor: pointer; flex-shrink: 0; letter-spacing: 0.02em;
 }
 .tag-inline-new-group {
   display: flex; align-items: center; gap: 6px;
@@ -914,9 +915,10 @@ function renderTagCheckboxes(containerId, selectedIds) {
         ${g.tags.map(t => `<button type="button" data-tag-id="${t.id}" class="tag-check-chip${sel.has(t.id) ? ' selected' : ''}" onclick="this.classList.toggle('selected')">${escHtml(t.name)}</button>`).join('')}
       </div>
       <div class="tag-inline-add">
-        <input type="text" id="${containerId}-newtag-${g.id}" placeholder="添加标签…"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();addInlineTag('${g.id}','${containerId}-newtag-${g.id}','${containerId}')}">
-        <button type="button" onclick="addInlineTag('${g.id}','${containerId}-newtag-${g.id}','${containerId}')">＋</button>
+        <input type="text" id="${containerId}-newtag-${g.id}" placeholder="输入标签名…"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();addInlineTag('${g.id}','${containerId}-newtag-${g.id}','${containerId}')}"
+          onblur="setTimeout(()=>addInlineTagIfPending('${g.id}','${containerId}-newtag-${g.id}','${containerId}'),150)">
+        <button type="button" onclick="addInlineTag('${g.id}','${containerId}-newtag-${g.id}','${containerId}')">添加</button>
       </div>
     </div>
   `).join('');
@@ -941,6 +943,11 @@ function addInlineTag(groupId, inputId, containerId) {
   renderTagCheckboxes(containerId, selected);
   const nextInput = document.getElementById(inputId);
   if (nextInput) nextInput.focus();
+}
+
+function addInlineTagIfPending(groupId, inputId, containerId) {
+  const input = document.getElementById(inputId);
+  if (input && input.value.trim()) addInlineTag(groupId, inputId, containerId);
 }
 
 function addInlineGroup(inputId, containerId) {
