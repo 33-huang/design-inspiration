@@ -231,18 +231,26 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
   cursor: pointer; font-family: inherit; color: var(--fg); transition: all 0.12s;
 }
 .tag-check-chip.selected { background: var(--fg); color: #fff; border-color: var(--fg); }
-.tag-inline-add {
-  display: flex; align-items: center; gap: 6px; padding: 2px 12px 10px;
+.tag-add-trigger {
+  background: none; border: none; color: var(--muted); font-size: 12px;
+  cursor: pointer; padding: 2px 12px 10px; font-family: inherit; letter-spacing: 0.02em;
 }
-.tag-inline-add input {
-  flex: 1; border: none; border-bottom: 1px solid var(--border); background: none;
-  padding: 4px 2px; font-size: 12px; font-family: inherit; color: var(--fg); outline: none;
+.tag-input-row {
+  display: none; align-items: center; gap: 8px; padding: 4px 12px 10px;
 }
-.tag-inline-add input::placeholder { color: #bbb; }
-.tag-inline-add button {
-  background: #eeecea; color: var(--fg); border: 1px solid var(--border);
-  border-radius: 6px; padding: 7px 11px; font-size: 12px; font-family: inherit;
-  cursor: pointer; flex-shrink: 0; letter-spacing: 0.02em;
+.tag-input-row input {
+  flex: 1; border: 1px solid var(--border); border-radius: 6px; background: var(--bg);
+  padding: 7px 10px; font-size: 13px; font-family: inherit; color: var(--fg); outline: none;
+}
+.tag-input-row input:focus { border-color: #999; }
+.tag-input-row input::placeholder { color: #bbb; }
+.tag-confirm-btn {
+  background: var(--fg); color: #fff; border: none; border-radius: 6px;
+  padding: 7px 12px; font-size: 14px; cursor: pointer; flex-shrink: 0; line-height: 1;
+}
+.tag-cancel-btn {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: 7px 9px; font-size: 13px; color: var(--muted); cursor: pointer; flex-shrink: 0; line-height: 1;
 }
 .tag-inline-new-group {
   display: flex; align-items: center; gap: 6px;
@@ -914,11 +922,12 @@ function renderTagCheckboxes(containerId, selectedIds) {
       <div class="tag-check-chips">
         ${g.tags.map(t => `<button type="button" data-tag-id="${t.id}" class="tag-check-chip${sel.has(t.id) ? ' selected' : ''}" onclick="this.classList.toggle('selected')">${escHtml(t.name)}</button>`).join('')}
       </div>
-      <div class="tag-inline-add">
-        <input type="text" id="${containerId}-newtag-${g.id}" placeholder="输入标签名…"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();addInlineTag('${g.id}','${containerId}-newtag-${g.id}','${containerId}')}"
-          onblur="setTimeout(()=>addInlineTagIfPending('${g.id}','${containerId}-newtag-${g.id}','${containerId}'),150)">
-        <button type="button" onclick="addInlineTag('${g.id}','${containerId}-newtag-${g.id}','${containerId}')">添加</button>
+      <button type="button" class="tag-add-trigger" onclick="showTagInput(this)">＋ 添加标签</button>
+      <div class="tag-input-row">
+        <input type="text" id="${containerId}-newtag-${g.id}" placeholder="标签名…"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();addInlineTag('${g.id}','${containerId}-newtag-${g.id}','${containerId}')}else if(event.key==='Escape'){hideTagInput(this)}">
+        <button type="button" class="tag-confirm-btn" onclick="addInlineTag('${g.id}','${containerId}-newtag-${g.id}','${containerId}')">✓</button>
+        <button type="button" class="tag-cancel-btn" onclick="hideTagInput(this)">✕</button>
       </div>
     </div>
   `).join('');
@@ -945,9 +954,17 @@ function addInlineTag(groupId, inputId, containerId) {
   if (nextInput) nextInput.focus();
 }
 
-function addInlineTagIfPending(groupId, inputId, containerId) {
-  const input = document.getElementById(inputId);
-  if (input && input.value.trim()) addInlineTag(groupId, inputId, containerId);
+function showTagInput(btn) {
+  btn.style.display = 'none';
+  const row = btn.nextElementSibling;
+  row.style.display = 'flex';
+  row.querySelector('input').focus();
+}
+
+function hideTagInput(el) {
+  const row = el.closest('.tag-input-row');
+  row.style.display = 'none';
+  row.previousElementSibling.style.display = '';
 }
 
 function addInlineGroup(inputId, containerId) {
