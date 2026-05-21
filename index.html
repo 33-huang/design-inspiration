@@ -13,7 +13,6 @@
   --muted: #888;
   --border: #d8d6d0;
   --card: #ffffff;
-  --accent: #1a1a1a;
   --nav-h: 60px;
   --top-h: 52px;
 }
@@ -30,17 +29,22 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .topbar h1 { font-size: 16px; font-weight: normal; letter-spacing: 0.06em; }
 .icon-btn {
   background: none; border: none; cursor: pointer; padding: 6px;
-  color: var(--muted); font-size: 20px; display: flex; align-items: center;
-  position: relative; flex-shrink: 0;
+  color: var(--muted); display: flex; align-items: center; flex-shrink: 0;
+  position: relative;
 }
 .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.5; }
-.filter-badge {
-  position: absolute; top: 2px; right: 2px;
+.more-btn {
+  background: none; border: none; cursor: pointer; padding: 6px 4px;
+  color: var(--fg); font-size: 13px; letter-spacing: 0.06em;
+  font-family: inherit; flex-shrink: 0; position: relative;
+}
+.more-badge {
+  position: absolute; top: 0; right: -2px;
   background: var(--fg); color: #fff; border-radius: 50%;
   width: 14px; height: 14px; font-size: 9px; display: none;
   align-items: center; justify-content: center; font-family: sans-serif;
 }
-.filter-badge.show { display: flex; }
+.more-badge.show { display: flex; }
 
 /* ── Bottom nav ── */
 .bottomnav {
@@ -67,6 +71,35 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 }
 .view.hidden { display: none; }
 
+/* ── Search overlay ── */
+.search-overlay {
+  position: fixed; inset: 0; background: var(--bg); z-index: 400;
+  display: flex; flex-direction: column;
+  transform: translateY(-100%); transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+  padding-top: env(safe-area-inset-top);
+}
+.search-overlay.open { transform: translateY(0); }
+.search-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.search-input {
+  flex: 1; border: none; background: #eeecea; border-radius: 8px;
+  padding: 10px 13px; font-size: 16px; font-family: inherit; color: var(--fg);
+  -webkit-appearance: none; outline: none;
+}
+.search-cancel {
+  background: none; border: none; font-size: 14px; color: var(--muted);
+  font-family: inherit; cursor: pointer; flex-shrink: 0; padding: 4px;
+}
+.search-results {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+}
+.search-hint {
+  text-align: center; padding: 60px 32px; color: var(--muted); font-size: 14px;
+}
+
 /* ── Active filter bar ── */
 .filter-active-bar {
   display: none; align-items: center; gap: 8px; padding: 9px 16px;
@@ -78,7 +111,6 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .filter-active-chip {
   flex-shrink: 0; background: var(--fg); color: #fff;
   border-radius: 20px; padding: 4px 10px; font-size: 12px;
-  letter-spacing: 0.02em;
 }
 .filter-clear-btn {
   flex-shrink: 0; background: none; border: 1px solid var(--border);
@@ -88,7 +120,6 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 
 /* ── Gallery ── */
 #gallery { padding: 20px 16px; }
-
 .item-card {
   background: var(--card); border-radius: 10px; margin-bottom: 20px;
   overflow: hidden; border: 1px solid var(--border);
@@ -189,32 +220,22 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .multi-preview img { height: 88px; width: auto; border-radius: 6px; flex-shrink: 0; object-fit: cover; display: block; }
 
 /* ── Tag checkboxes ── */
-.tag-check-area {
-  border: 1px solid var(--border); border-radius: 6px;
-  background: var(--card); overflow: hidden;
-}
+.tag-check-area { border: 1px solid var(--border); border-radius: 6px; background: var(--card); overflow: hidden; }
 .tag-check-group { border-bottom: 1px solid var(--border); }
 .tag-check-group:last-child { border-bottom: none; }
-.tag-check-group-header {
-  padding: 10px 13px; font-size: 12px; color: var(--muted);
-  letter-spacing: 0.06em; text-transform: uppercase; background: #f8f7f4;
-}
+.tag-check-group-header { padding: 10px 13px; font-size: 12px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; background: #f8f7f4; }
 .tag-check-chips { padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px; }
 .tag-check-chip {
   padding: 5px 10px; border-radius: 20px; font-size: 13px;
   border: 1px solid var(--border); background: var(--bg);
-  cursor: pointer; font-family: inherit; color: var(--fg);
-  transition: all 0.12s; -webkit-tap-highlight-color: transparent;
+  cursor: pointer; font-family: inherit; color: var(--fg); transition: all 0.12s;
 }
-.tag-check-chip.selected {
-  background: var(--fg); color: #fff; border-color: var(--fg);
-}
+.tag-check-chip.selected { background: var(--fg); color: #fff; border-color: var(--fg); }
 
 .submit-btn {
   width: 100%; background: var(--fg); color: #fff; border: none;
   border-radius: 8px; padding: 15px; font-size: 15px; font-family: inherit;
-  letter-spacing: 0.06em; cursor: pointer; margin-top: 8px;
-  transition: opacity 0.15s;
+  letter-spacing: 0.06em; cursor: pointer; margin-top: 8px; transition: opacity 0.15s;
 }
 .submit-btn:disabled { opacity: 0.5; }
 .submit-btn:active { opacity: 0.75; }
@@ -222,9 +243,8 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .toast {
   position: fixed; bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));
   left: 16px; right: 16px; padding: 13px 16px; border-radius: 8px;
-  font-size: 14px; text-align: center; z-index: 200;
-  transform: translateY(20px); opacity: 0; transition: all 0.25s;
-  pointer-events: none;
+  font-size: 14px; text-align: center; z-index: 500;
+  transform: translateY(20px); opacity: 0; transition: all 0.25s; pointer-events: none;
 }
 .toast.show { transform: translateY(0); opacity: 1; }
 .toast.ok { background: #1a1a1a; color: #fff; }
@@ -244,15 +264,14 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
   max-height: 90vh; overflow-y: auto;
 }
 .modal-overlay.open .modal-sheet { transform: translateY(0); }
-.modal-handle { width: 36px; height: 4px; background: #ccc; border-radius: 2px; margin: 0 auto 20px; flex-shrink: 0; }
+.modal-handle { width: 36px; height: 4px; background: #ccc; border-radius: 2px; margin: 0 auto 20px; }
 .modal-title { font-size: 14px; font-weight: normal; letter-spacing: 0.06em; margin-bottom: 20px; text-transform: uppercase; color: var(--muted); }
 .modal-field { margin-bottom: 14px; }
 .modal-field label { display: block; font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
 .modal-field input {
   width: 100%; border: 1px solid var(--border); border-radius: 6px;
   padding: 10px 12px; font-size: 14px; font-family: inherit;
-  background: var(--card); color: var(--fg);
-  -webkit-appearance: none;
+  background: var(--card); color: var(--fg); -webkit-appearance: none;
 }
 .modal-field input:focus { outline: none; border-color: #999; }
 .modal-field textarea {
@@ -267,14 +286,6 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
   border-radius: 8px; padding: 13px; font-size: 14px; font-family: inherit;
   letter-spacing: 0.06em; cursor: pointer; margin-top: 8px;
 }
-.modal-hint { font-size: 12px; color: var(--muted); margin-top: 12px; text-align: center; line-height: 1.5; }
-.modal-hint a { color: var(--muted); }
-
-/* ── Status badge ── */
-.status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-.status-dot.ok { background: #4caf50; }
-.status-dot.err { background: #e53935; }
-.status-dot.idle { background: #ccc; }
 
 /* ── View toggle ── */
 .view-toggle { display: flex; gap: 2px; background: #e8e6e0; border-radius: 7px; padding: 3px; }
@@ -291,7 +302,7 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .list-item {
   display: flex; align-items: center; gap: 14px; padding: 14px 18px;
   border-bottom: 1px solid var(--border); cursor: pointer; background: var(--bg);
-  transition: background 0.12s; -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s;
 }
 .list-item:active { background: #eeece7; }
 .list-num { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; min-width: 22px; }
@@ -310,8 +321,21 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .grid-num { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; }
 .grid-title { font-size: 13px; margin-top: 2px; line-height: 1.35; }
 
-/* count badge */
-.count-badge { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; }
+/* ── More modal rows ── */
+.more-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 4px; border-bottom: 1px solid var(--border);
+  cursor: pointer; background: none; border-left: none; border-right: none; border-top: none;
+  width: 100%; font-family: inherit; text-align: left;
+  transition: background 0.12s;
+}
+.more-row:last-child { border-bottom: none; }
+.more-row:active { background: #eeecea; }
+.more-row-icon { width: 36px; height: 36px; border-radius: 8px; background: #eeecea; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.more-row-icon svg { width: 18px; height: 18px; stroke: var(--fg); fill: none; stroke-width: 1.6; }
+.more-row-label { font-size: 15px; color: var(--fg); flex: 1; }
+.more-row-badge { background: var(--fg); color: #fff; border-radius: 10px; padding: 2px 7px; font-size: 11px; font-family: sans-serif; }
+.more-row-arrow { color: var(--muted); font-size: 18px; }
 
 /* ── Filter modal ── */
 .filter-modal-group { margin-bottom: 18px; }
@@ -320,8 +344,7 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .filter-modal-chip {
   padding: 6px 12px; border-radius: 20px; font-size: 13px;
   border: 1px solid var(--border); background: var(--bg);
-  cursor: pointer; font-family: inherit; color: var(--fg);
-  transition: all 0.12s;
+  cursor: pointer; font-family: inherit; color: var(--fg); transition: all 0.12s;
 }
 .filter-modal-chip.selected { background: var(--fg); color: #fff; border-color: var(--fg); }
 .filter-clear-all {
@@ -331,53 +354,22 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 }
 
 /* ── Tag management ── */
-.tag-mgmt-btn {
-  width: 100%; background: none; border: 1px solid var(--border); border-radius: 8px;
-  padding: 11px; font-size: 13px; font-family: inherit; color: var(--muted);
-  cursor: pointer; margin-top: 8px; letter-spacing: 0.04em; text-align: center;
-}
 .tag-mgmt-group { margin-bottom: 20px; }
-.tag-mgmt-group-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 8px;
-}
+.tag-mgmt-group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .tag-mgmt-group-name { font-size: 13px; font-weight: normal; }
-.tag-mgmt-del-btn {
-  background: none; border: none; color: #c0392b; font-size: 13px;
-  cursor: pointer; padding: 2px 6px; font-family: inherit;
-}
+.tag-mgmt-del-btn { background: none; border: none; color: #c0392b; font-size: 13px; cursor: pointer; padding: 2px 6px; font-family: inherit; }
 .tag-mgmt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.tag-mgmt-chip {
-  display: flex; align-items: center; gap: 4px;
-  padding: 4px 10px; border-radius: 20px; font-size: 12px;
-  border: 1px solid var(--border); background: var(--bg);
-}
+.tag-mgmt-chip { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 12px; border: 1px solid var(--border); background: var(--bg); }
 .tag-mgmt-chip-del { background: none; border: none; color: #aaa; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
-.tag-mgmt-add-tag {
-  display: flex; gap: 6px; margin-top: 4px;
-}
-.tag-mgmt-add-tag input {
-  flex: 1; border: 1px solid var(--border); border-radius: 6px;
-  padding: 7px 10px; font-size: 13px; font-family: inherit;
-  background: var(--card); color: var(--fg); -webkit-appearance: none;
-}
+.tag-mgmt-add-tag { display: flex; gap: 6px; margin-top: 4px; }
+.tag-mgmt-add-tag input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 13px; font-family: inherit; background: var(--card); color: var(--fg); -webkit-appearance: none; }
 .tag-mgmt-add-tag input:focus { outline: none; border-color: #999; }
-.tag-mgmt-add-tag button {
-  background: var(--fg); color: #fff; border: none; border-radius: 6px;
-  padding: 7px 14px; font-size: 13px; font-family: inherit; cursor: pointer;
-}
+.tag-mgmt-add-tag button { background: var(--fg); color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 13px; font-family: inherit; cursor: pointer; }
 .tag-mgmt-new-group { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
 .tag-mgmt-new-group-row { display: flex; gap: 6px; }
-.tag-mgmt-new-group-row input {
-  flex: 1; border: 1px solid var(--border); border-radius: 6px;
-  padding: 9px 12px; font-size: 14px; font-family: inherit;
-  background: var(--card); color: var(--fg); -webkit-appearance: none;
-}
+.tag-mgmt-new-group-row input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; font-size: 14px; font-family: inherit; background: var(--card); color: var(--fg); -webkit-appearance: none; }
 .tag-mgmt-new-group-row input:focus { outline: none; border-color: #999; }
-.tag-mgmt-new-group-row button {
-  background: var(--fg); color: #fff; border: none; border-radius: 6px;
-  padding: 9px 16px; font-size: 14px; font-family: inherit; cursor: pointer;
-}
+.tag-mgmt-new-group-row button { background: var(--fg); color: #fff; border: none; border-radius: 6px; padding: 9px 16px; font-size: 14px; font-family: inherit; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -385,7 +377,7 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 <!-- Top bar -->
 <div class="topbar">
   <h1>设计灵感</h1>
-  <div style="display:flex;align-items:center;gap:8px;">
+  <div style="display:flex;align-items:center;gap:10px;">
     <div class="view-toggle">
       <button class="vt-btn" id="vt-list" onclick="setView('list')" title="文字目录">
         <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
@@ -397,13 +389,9 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="5" rx="1"/><rect x="3" y="10" width="18" height="5" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
       </button>
     </div>
-    <button class="icon-btn" id="filterBtn" onclick="openFilterModal()" title="筛选">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-      <span class="filter-badge" id="filterBadge"></span>
-    </button>
-    <span id="statusDot" class="status-dot idle" title="GitHub 连接状态"></span>
-    <button class="icon-btn" id="settingsBtn" aria-label="设置">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <button class="more-btn" id="moreBtn" onclick="openMore()">
+      更多
+      <span class="more-badge" id="moreBadge"></span>
     </button>
   </div>
 </div>
@@ -411,7 +399,6 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 <!-- Gallery view -->
 <div class="view" id="galleryView">
   <div class="filter-active-bar" id="filterActiveBar">
-    <!-- chips injected here -->
     <button class="filter-clear-btn" onclick="clearFilters()">清除筛选</button>
   </div>
   <div id="gallery">
@@ -484,13 +471,42 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
   </div>
 </div>
 
+<!-- More modal -->
+<div class="modal-overlay" id="moreOverlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <button class="more-row" onclick="closeMore(); openSearch()">
+      <div class="more-row-icon">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+      </div>
+      <span class="more-row-label">搜索</span>
+      <span class="more-row-arrow">›</span>
+    </button>
+    <button class="more-row" onclick="closeMore(); openFilterModal()">
+      <div class="more-row-icon">
+        <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      </div>
+      <span class="more-row-label">筛选标签</span>
+      <span id="moreFilterBadge" class="more-row-badge" style="display:none;"></span>
+      <span class="more-row-arrow">›</span>
+    </button>
+    <button class="more-row" onclick="closeMore(); openTagMgmt()">
+      <div class="more-row-icon">
+        <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      </div>
+      <span class="more-row-label">管理标签</span>
+      <span class="more-row-arrow">›</span>
+    </button>
+  </div>
+</div>
+
 <!-- Filter modal -->
 <div class="modal-overlay" id="filterOverlay">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">筛选标签</div>
     <div id="filterModalContent"></div>
-    <button class="filter-clear-all" onclick="clearFilters(); closeFilterModal()">清除全部筛选</button>
+    <button class="filter-clear-all" onclick="clearFilters()">清除全部筛选</button>
     <button class="modal-save" onclick="closeFilterModal()" style="margin-top:10px;">完成</button>
   </div>
 </div>
@@ -512,6 +528,17 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
   </div>
 </div>
 
+<!-- Search overlay -->
+<div class="search-overlay" id="searchOverlay">
+  <div class="search-bar">
+    <input class="search-input" id="searchInput" type="search" placeholder="搜索标题或分析文字…" autocomplete="off">
+    <button class="search-cancel" onclick="closeSearch()">取消</button>
+  </div>
+  <div class="search-results" id="searchResults">
+    <div class="search-hint">输入关键字开始搜索</div>
+  </div>
+</div>
+
 <!-- Bottom nav -->
 <nav class="bottomnav">
   <button class="nav-btn active" id="navGallery" onclick="switchTab('gallery')">
@@ -527,39 +554,9 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Settings modal -->
-<div class="modal-overlay" id="settingsOverlay">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">GitHub 设置</div>
-    <div class="modal-field">
-      <label>Personal Access Token</label>
-      <input type="password" id="s-token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
-    </div>
-    <div class="modal-field">
-      <label>用户名 / Owner</label>
-      <input type="text" id="s-owner" placeholder="your-username">
-    </div>
-    <div class="modal-field">
-      <label>仓库名 / Repo</label>
-      <input type="text" id="s-repo" placeholder="design-inspiration">
-    </div>
-    <div class="modal-field">
-      <label>分支</label>
-      <input type="text" id="s-branch" placeholder="main">
-    </div>
-    <button class="modal-save" onclick="saveSettings()">保存</button>
-    <button class="tag-mgmt-btn" onclick="closeSettings(); openTagMgmt()">管理标签 →</button>
-    <p class="modal-hint">
-      Token 需要 <code>repo</code> 权限。<br>
-      数据保存在仓库的 <code>data.json</code> 文件中。
-    </p>
-  </div>
-</div>
-
 <script>
 // ─────────────────────────────────────────────
-// Settings
+// Settings (hidden — values stay in localStorage)
 // ─────────────────────────────────────────────
 function getSettings() {
   return {
@@ -573,30 +570,6 @@ function hasSettings() {
   const s = getSettings();
   return s.token && s.owner && s.repo;
 }
-function saveSettings() {
-  localStorage.setItem('gh_token',  document.getElementById('s-token').value.trim());
-  localStorage.setItem('gh_owner',  document.getElementById('s-owner').value.trim());
-  localStorage.setItem('gh_repo',   document.getElementById('s-repo').value.trim());
-  localStorage.setItem('gh_branch', document.getElementById('s-branch').value.trim() || 'main');
-  closeSettings();
-  showToast('设置已保存', 'ok');
-  loadItems();
-}
-function openSettings() {
-  const s = getSettings();
-  document.getElementById('s-token').value  = s.token;
-  document.getElementById('s-owner').value  = s.owner;
-  document.getElementById('s-repo').value   = s.repo;
-  document.getElementById('s-branch').value = s.branch;
-  document.getElementById('settingsOverlay').classList.add('open');
-}
-function closeSettings() {
-  document.getElementById('settingsOverlay').classList.remove('open');
-}
-document.getElementById('settingsBtn').addEventListener('click', openSettings);
-document.getElementById('settingsOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('settingsOverlay')) closeSettings();
-});
 
 // ─────────────────────────────────────────────
 // GitHub API
@@ -646,7 +619,7 @@ function resolveImg(src) {
 }
 
 async function loadData() {
-  const { token, owner, repo, branch } = getSettings();
+  const { owner, repo, branch } = getSettings();
   const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data.json?t=${Date.now()}`;
   const rawRes = await fetch(rawUrl);
   if (!rawRes.ok) throw new Error(`读取失败 ${rawRes.status}`);
@@ -656,8 +629,7 @@ async function loadData() {
 }
 
 async function saveData(items, sha, message) {
-  const json = JSON.stringify(items, null, 2);
-  return ghPut('data.json', json, sha, message);
+  return ghPut('data.json', JSON.stringify(items, null, 2), sha, message);
 }
 
 // ─────────────────────────────────────────────
@@ -674,18 +646,12 @@ async function loadTagsData() {
     if (!res.ok) return;
     const data = await res.json();
     tagGroups = data.groups || [];
-    try {
-      const meta = await ghGet('tags.json');
-      _tagsSha = meta.sha;
-    } catch(e) {}
-  } catch(e) {
-    tagGroups = [];
-  }
+    try { const meta = await ghGet('tags.json'); _tagsSha = meta.sha; } catch(e) {}
+  } catch(e) { tagGroups = []; }
 }
 
 async function saveTagsData(groups) {
-  const json = JSON.stringify({ groups }, null, 2);
-  const result = await ghPut('tags.json', json, _tagsSha || null, '更新标签');
+  const result = await ghPut('tags.json', JSON.stringify({ groups }, null, 2), _tagsSha || null, '更新标签');
   _tagsSha = result.content.sha;
   tagGroups = groups;
 }
@@ -713,35 +679,34 @@ let activeFilters = new Set();
 function toggleFilter(tagId) {
   if (activeFilters.has(tagId)) activeFilters.delete(tagId);
   else activeFilters.add(tagId);
-  updateFilterBadge();
-  updateFilterActiveBar();
+  updateFilterUI();
   const cached = getCachedItems();
   if (cached) renderGallery(cached);
-  // re-render filter modal chips
   renderFilterModalContent();
 }
 
 function clearFilters() {
   activeFilters.clear();
-  updateFilterBadge();
-  updateFilterActiveBar();
+  updateFilterUI();
   const cached = getCachedItems();
   if (cached) renderGallery(cached);
   renderFilterModalContent();
 }
 
-function updateFilterBadge() {
-  const badge = document.getElementById('filterBadge');
+function updateFilterUI() {
   const n = activeFilters.size;
+  // more badge
+  const badge = document.getElementById('moreBadge');
   badge.textContent = n;
   badge.classList.toggle('show', n > 0);
-}
-
-function updateFilterActiveBar() {
+  // more modal filter badge
+  const mb = document.getElementById('moreFilterBadge');
+  if (n > 0) { mb.textContent = n + ' 个'; mb.style.display = ''; }
+  else mb.style.display = 'none';
+  // active bar
   const bar = document.getElementById('filterActiveBar');
-  if (activeFilters.size === 0) { bar.classList.remove('show'); return; }
+  if (n === 0) { bar.classList.remove('show'); return; }
   bar.classList.add('show');
-  // remove old chips (keep the clear button at end)
   const clearBtn = bar.querySelector('.filter-clear-btn');
   bar.innerHTML = '';
   activeFilters.forEach(id => {
@@ -759,12 +724,19 @@ function getFilteredItems(items) {
   if (activeFilters.size === 0) return items;
   return items.filter(item => {
     const itemTags = new Set(item.tags || []);
-    for (const id of activeFilters) {
-      if (itemTags.has(id)) return true;
-    }
+    for (const id of activeFilters) { if (itemTags.has(id)) return true; }
     return false;
   });
 }
+
+// ─────────────────────────────────────────────
+// More modal
+// ─────────────────────────────────────────────
+function openMore() { document.getElementById('moreOverlay').classList.add('open'); }
+function closeMore() { document.getElementById('moreOverlay').classList.remove('open'); }
+document.getElementById('moreOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('moreOverlay')) closeMore();
+});
 
 // ─────────────────────────────────────────────
 // Filter modal
@@ -773,9 +745,7 @@ function openFilterModal() {
   renderFilterModalContent();
   document.getElementById('filterOverlay').classList.add('open');
 }
-function closeFilterModal() {
-  document.getElementById('filterOverlay').classList.remove('open');
-}
+function closeFilterModal() { document.getElementById('filterOverlay').classList.remove('open'); }
 document.getElementById('filterOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('filterOverlay')) closeFilterModal();
 });
@@ -783,17 +753,14 @@ document.getElementById('filterOverlay').addEventListener('click', e => {
 function renderFilterModalContent() {
   const el = document.getElementById('filterModalContent');
   if (!tagGroups.length) {
-    el.innerHTML = '<p style="font-size:14px;color:var(--muted);margin-bottom:16px;">还没有标签，请先在设置中管理标签。</p>';
+    el.innerHTML = '<p style="font-size:14px;color:var(--muted);margin-bottom:16px;">还没有标签，请先在「管理标签」中添加。</p>';
     return;
   }
   el.innerHTML = tagGroups.map(g => `
     <div class="filter-modal-group">
       <div class="filter-modal-group-name">${escHtml(g.name)}</div>
       <div class="filter-modal-chips">
-        ${g.tags.map(t => `
-          <button class="filter-modal-chip${activeFilters.has(t.id) ? ' selected' : ''}"
-            onclick="toggleFilter('${t.id}')">${escHtml(t.name)}</button>
-        `).join('')}
+        ${g.tags.map(t => `<button class="filter-modal-chip${activeFilters.has(t.id) ? ' selected' : ''}" onclick="toggleFilter('${t.id}')">${escHtml(t.name)}</button>`).join('')}
       </div>
     </div>
   `).join('');
@@ -809,9 +776,7 @@ function openTagMgmt() {
   renderTagMgmtContent();
   document.getElementById('tagMgmtOverlay').classList.add('open');
 }
-function closeTagMgmt() {
-  document.getElementById('tagMgmtOverlay').classList.remove('open');
-}
+function closeTagMgmt() { document.getElementById('tagMgmtOverlay').classList.remove('open'); }
 document.getElementById('tagMgmtOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('tagMgmtOverlay')) closeTagMgmt();
 });
@@ -825,12 +790,7 @@ function renderTagMgmtContent() {
         <button class="tag-mgmt-del-btn" onclick="deleteTagGroup(${gi})">删除分组</button>
       </div>
       <div class="tag-mgmt-chips">
-        ${g.tags.map((t, ti) => `
-          <span class="tag-mgmt-chip">
-            ${escHtml(t.name)}
-            <button class="tag-mgmt-chip-del" onclick="deleteTag(${gi},${ti})" title="删除">×</button>
-          </span>
-        `).join('')}
+        ${g.tags.map((t, ti) => `<span class="tag-mgmt-chip">${escHtml(t.name)}<button class="tag-mgmt-chip-del" onclick="deleteTag(${gi},${ti})">×</button></span>`).join('')}
       </div>
       <div class="tag-mgmt-add-tag">
         <input type="text" id="newtag-${gi}" placeholder="新标签名">
@@ -842,33 +802,18 @@ function renderTagMgmtContent() {
 
 function addTagGroup() {
   const input = document.getElementById('newGroupName');
-  const name = input.value.trim();
-  if (!name) return;
-  const gid = 'g' + Date.now();
-  _editingGroups.push({ id: gid, name, tags: [] });
-  input.value = '';
-  renderTagMgmtContent();
+  const name = input.value.trim(); if (!name) return;
+  _editingGroups.push({ id: 'g' + Date.now(), name, tags: [] });
+  input.value = ''; renderTagMgmtContent();
 }
-
-function deleteTagGroup(gi) {
-  _editingGroups.splice(gi, 1);
-  renderTagMgmtContent();
-}
-
+function deleteTagGroup(gi) { _editingGroups.splice(gi, 1); renderTagMgmtContent(); }
 function addTag(gi) {
   const input = document.getElementById(`newtag-${gi}`);
-  const name = input.value.trim();
-  if (!name) return;
-  const tid = 't' + Date.now();
-  _editingGroups[gi].tags.push({ id: tid, name });
-  input.value = '';
-  renderTagMgmtContent();
+  const name = input.value.trim(); if (!name) return;
+  _editingGroups[gi].tags.push({ id: 't' + Date.now(), name });
+  input.value = ''; renderTagMgmtContent();
 }
-
-function deleteTag(gi, ti) {
-  _editingGroups[gi].tags.splice(ti, 1);
-  renderTagMgmtContent();
-}
+function deleteTag(gi, ti) { _editingGroups[gi].tags.splice(ti, 1); renderTagMgmtContent(); }
 
 async function saveTagMgmt() {
   const btn = document.querySelector('#tagMgmtOverlay .modal-save');
@@ -880,14 +825,50 @@ async function saveTagMgmt() {
     showToast('标签已保存', 'ok');
     renderAddTagArea([]);
     renderEditTagArea([]);
-  } catch(e) {
-    showToast('保存失败：' + e.message, 'err');
-  }
+  } catch(e) { showToast('保存失败：' + e.message, 'err'); }
   btn.textContent = '保存标签'; btn.disabled = false;
 }
 
 // ─────────────────────────────────────────────
-// Tag checkboxes (add / edit forms)
+// Search
+// ─────────────────────────────────────────────
+function openSearch() {
+  document.getElementById('searchOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('searchInput').focus(), 300);
+}
+function closeSearch() {
+  document.getElementById('searchOverlay').classList.remove('open');
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').innerHTML = '<div class="search-hint">输入关键字开始搜索</div>';
+}
+
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  const el = document.getElementById('searchResults');
+  if (!q) { el.innerHTML = '<div class="search-hint">输入关键字开始搜索</div>'; return; }
+  const cached = getCachedItems() || [];
+  const results = cached.filter(item =>
+    (item.title || '').toLowerCase().includes(q) ||
+    (item.analysis || '').toLowerCase().includes(q)
+  );
+  if (!results.length) { el.innerHTML = '<div class="search-hint">没有找到相关内容</div>'; return; }
+  el.innerHTML = results.map(item => {
+    const num = String(item.id).padStart(2, '0');
+    const firstImg = resolveImg((item.images && item.images[0]) || item.image || null);
+    const thumb = firstImg
+      ? `<img class="list-thumb" src="${firstImg}" loading="lazy">`
+      : `<div class="list-thumb" style="background:#e0deda;border-radius:5px;"></div>`;
+    return `<div class="list-item" onclick="closeSearch(); jumpToCard(${item.id})">
+  ${thumb}
+  <span class="list-num">${num}</span>
+  <span class="list-title">${escHtml(item.title)}</span>
+  <span class="list-arrow">›</span>
+</div>`;
+  }).join('');
+});
+
+// ─────────────────────────────────────────────
+// Tag checkboxes
 // ─────────────────────────────────────────────
 function renderTagCheckboxes(containerId, selectedIds) {
   const el = document.getElementById(containerId);
@@ -897,28 +878,21 @@ function renderTagCheckboxes(containerId, selectedIds) {
     <div class="tag-check-group">
       <div class="tag-check-group-header">${escHtml(g.name)}</div>
       <div class="tag-check-chips">
-        ${g.tags.map(t => `
-          <button type="button"
-            class="tag-check-chip${sel.has(t.id) ? ' selected' : ''}"
-            onclick="toggleTagChip(this,'${t.id}','${containerId}')">
-            ${escHtml(t.name)}
-          </button>
-        `).join('')}
+        ${g.tags.map(t => `<button type="button" class="tag-check-chip${sel.has(t.id) ? ' selected' : ''}" onclick="this.classList.toggle('selected')">${escHtml(t.name)}</button>`).join('')}
       </div>
     </div>
   `).join('');
 }
 
-function toggleTagChip(btn, tagId, containerId) {
-  btn.classList.toggle('selected');
-}
-
 function getSelectedTags(containerId) {
-  const el = document.getElementById(containerId);
-  return [...el.querySelectorAll('.tag-check-chip.selected')].map(b => {
-    const onclickStr = b.getAttribute('onclick');
-    const m = onclickStr.match(/'([^']+)'/);
-    return m ? m[1] : null;
+  return [...document.querySelectorAll(`#${containerId} .tag-check-chip.selected`)].map(b => {
+    // find tag id by matching name
+    const name = b.textContent.trim();
+    for (const g of tagGroups) {
+      const t = g.tags.find(t => t.name === name);
+      if (t) return t.id;
+    }
+    return null;
   }).filter(Boolean);
 }
 
@@ -954,9 +928,7 @@ let currentView = localStorage.getItem('view_mode') || 'card';
 function setView(mode) {
   currentView = mode;
   try { localStorage.setItem('view_mode', mode); } catch(e) {}
-  ['list','grid','card'].forEach(m => {
-    document.getElementById('vt-' + m).classList.toggle('active', m === mode);
-  });
+  ['list','grid','card'].forEach(m => document.getElementById('vt-' + m).classList.toggle('active', m === mode));
   const cached = getCachedItems();
   if (cached) renderGallery(cached);
 }
@@ -985,9 +957,7 @@ function renderTagsInCard(item) {
     `<div class="card-tag-group"><span class="card-tag-group-name">${escHtml(g.name)}：</span>${g.tags.map(n => `<span class="card-tag-chip">${escHtml(n)}</span>`).join('')}</div>`
   ).join('');
   if (!rows) return '';
-  return `
-    <button class="card-tag-toggle" onclick="toggleCardTags(this)">显示标签</button>
-    <div class="card-tag-area">${rows}</div>`;
+  return `<button class="card-tag-toggle" onclick="toggleCardTags(this)">显示标签</button><div class="card-tag-area">${rows}</div>`;
 }
 
 function toggleCardTags(btn) {
@@ -1015,12 +985,7 @@ function renderGallery(items) {
       const thumb = firstImg
         ? `<img class="list-thumb" src="${firstImg}" loading="lazy">`
         : `<div class="list-thumb" style="background:#e0deda;border-radius:5px;"></div>`;
-      return `<div class="list-item" onclick="jumpToCard(${item.id})">
-  ${thumb}
-  <span class="list-num">${num}</span>
-  <span class="list-title">${escHtml(item.title)}</span>
-  <span class="list-arrow">›</span>
-</div>`;
+      return `<div class="list-item" onclick="jumpToCard(${item.id})">${thumb}<span class="list-num">${num}</span><span class="list-title">${escHtml(item.title)}</span><span class="list-arrow">›</span></div>`;
     }).join('');
     return;
   }
@@ -1030,16 +995,8 @@ function renderGallery(items) {
     const cells = sorted.map(item => {
       const num = String(item.id).padStart(2, '0');
       const firstImg = resolveImg((item.images && item.images[0]) || item.image || null);
-      const imgHtml = firstImg
-        ? `<img class="grid-img" src="${firstImg}" loading="lazy">`
-        : `<div class="grid-no-img"><span>✦</span></div>`;
-      return `<div class="grid-item" onclick="jumpToCard(${item.id})">
-  ${imgHtml}
-  <div class="grid-info">
-    <div class="grid-num">${num}</div>
-    <div class="grid-title">${escHtml(item.title)}</div>
-  </div>
-</div>`;
+      const imgHtml = firstImg ? `<img class="grid-img" src="${firstImg}" loading="lazy">` : `<div class="grid-no-img"><span>✦</span></div>`;
+      return `<div class="grid-item" onclick="jumpToCard(${item.id})">${imgHtml}<div class="grid-info"><div class="grid-num">${num}</div><div class="grid-title">${escHtml(item.title)}</div></div></div>`;
     }).join('');
     el.innerHTML = `<div class="grid-wrap">${cells}</div>`;
     return;
@@ -1058,10 +1015,8 @@ function renderGallery(items) {
       const slides = imgs.map(src => `<img class="carousel-img" src="${src}" loading="lazy">`).join('');
       mediaHtml = `<div class="carousel-wrap"><div class="carousel-track" data-total="${imgs.length}">${slides}</div><div class="carousel-num">1 / ${imgs.length}</div></div>`;
     }
-    const archiveHtml = item.archive
-      ? `<div class="card-archive">整理：${escHtml(item.archive)}</div>` : '';
-    const linkMenuItem = item.link
-      ? `<button class="card-menu-item" onclick="copyLink('${escAttr(item.link)}', this); closeCardMenu()">复制链接</button>` : '';
+    const archiveHtml = item.archive ? `<div class="card-archive">整理：${escHtml(item.archive)}</div>` : '';
+    const linkMenuItem = item.link ? `<button class="card-menu-item" onclick="copyLink('${escAttr(item.link)}', this); closeCardMenu()">复制链接</button>` : '';
     const tagsHtml = renderTagsInCard(item);
     return `
 <div class="item-card" id="card-${item.id}">
@@ -1090,20 +1045,16 @@ function renderGallery(items) {
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function escAttr(s) {
-  return String(s||'').replace(/'/g,"\\'");
-}
+function escAttr(s) { return String(s||'').replace(/'/g,"\\'"); }
 
 function toggleExpand(id) {
   const ana = document.getElementById(`ana-${id}`);
   const btn = document.getElementById(`exp-${id}`);
-  const expanded = ana.classList.toggle('expanded');
-  btn.textContent = expanded ? '收起' : '展开全文';
+  btn.textContent = ana.classList.toggle('expanded') ? '收起' : '展开全文';
 }
 
 function copyText(id, btn) {
-  const text = document.getElementById(id).textContent;
-  navigator.clipboard.writeText(text).then(() => {
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(() => {
     const orig = btn.textContent; btn.textContent = '已复制';
     setTimeout(() => btn.textContent = orig, 1500);
   }).catch(() => showToast('复制失败', 'err'));
@@ -1126,44 +1077,25 @@ async function loadItems() {
 
   if (!hasSettings()) {
     document.getElementById('gallery').innerHTML =
-      `<div class="empty-state"><p>请先点击右上角齿轮<br>配置 GitHub 信息</p></div>`;
-    setStatus('err');
-    if (_hashCfg) {
-      document.getElementById('s-token').value  = _hashCfg.t || '';
-      document.getElementById('s-owner').value  = _hashCfg.o || '';
-      document.getElementById('s-repo').value   = _hashCfg.r || '';
-      document.getElementById('s-branch').value = _hashCfg.b || 'main';
-      document.getElementById('settingsOverlay').classList.add('open');
-    }
+      `<div class="empty-state"><p>配置未找到<br><small>请联系管理员重新配置</small></p></div>`;
     return;
   }
 
-  setStatus('idle');
   try {
-    const [dataResult] = await Promise.all([
-      loadData(),
-      loadTagsData()
-    ]);
+    const [dataResult] = await Promise.all([loadData(), loadTagsData()]);
     const { items } = dataResult;
     cacheItems(items);
     cacheTagGroups(tagGroups);
     renderGallery(items);
     renderAddTagArea([]);
-    setStatus('ok');
   } catch (e) {
     console.error(e);
-    setStatus('err');
     if (!cached) {
       document.getElementById('gallery').innerHTML =
         `<div class="empty-state"><p>加载失败<br><small>${e.message}</small></p></div>`;
     }
     showToast('加载失败：' + e.message, 'err');
   }
-}
-
-function setStatus(s) {
-  const dot = document.getElementById('statusDot');
-  dot.className = 'status-dot ' + s;
 }
 
 // ─────────────────────────────────────────────
@@ -1176,12 +1108,10 @@ function readImageElement(file) {
     const reader = new FileReader();
     reader.onload = e => {
       const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
+      img.onload = () => resolve(img); img.onerror = reject;
       img.src = e.target.result;
     };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    reader.onerror = reject; reader.readAsDataURL(file);
   });
 }
 
@@ -1193,35 +1123,28 @@ function renderToJpeg(imgEl, maxChars) {
   canvas.width = w; canvas.height = h;
   canvas.getContext('2d').drawImage(imgEl, 0, 0, w, h);
   let q = 0.88, result;
-  do { result = canvas.toDataURL('image/jpeg', q); q -= 0.07; }
-  while (result.length > maxChars && q > 0.2);
+  do { result = canvas.toDataURL('image/jpeg', q); q -= 0.07; } while (result.length > maxChars && q > 0.2);
   return result;
 }
 
 async function compressFiles(files) {
   const perImg = Math.floor(MAX_TOTAL_B64 / files.length);
   const results = [];
-  for (const f of files) {
-    const imgEl = await readImageElement(f);
-    results.push(renderToJpeg(imgEl, perImg));
-  }
+  for (const f of files) { const imgEl = await readImageElement(f); results.push(renderToJpeg(imgEl, perImg)); }
   return results;
 }
 
 let _pendingImages = [];
 
 document.getElementById('f-image').addEventListener('change', async function() {
-  const files = [...this.files];
-  if (!files.length) return;
-  const area = document.getElementById('uploadArea');
+  const files = [...this.files]; if (!files.length) return;
   const label = document.getElementById('uploadLabel');
-  const preview = document.getElementById('multiPreview');
   label.textContent = '压缩中…';
   try {
     _pendingImages = await compressFiles(files);
-    preview.innerHTML = _pendingImages.map(src => `<img src="${src}">`).join('');
+    document.getElementById('multiPreview').innerHTML = _pendingImages.map(src => `<img src="${src}">`).join('');
     label.style.display = 'none';
-    area.classList.add('has-image');
+    document.getElementById('uploadArea').classList.add('has-image');
   } catch(e) {
     showToast('图片处理失败', 'err');
     label.textContent = '点击或拍照上传，可多选';
@@ -1230,12 +1153,10 @@ document.getElementById('f-image').addEventListener('change', async function() {
 
 function initCarousels() {
   document.querySelectorAll('.carousel-track').forEach(track => {
-    const numEl = track.nextElementSibling;
-    if (!numEl) return;
+    const numEl = track.nextElementSibling; if (!numEl) return;
     const total = parseInt(track.dataset.total) || 1;
     track.addEventListener('scroll', () => {
-      const idx = Math.round(track.scrollLeft / track.offsetWidth) + 1;
-      numEl.textContent = `${idx} / ${total}`;
+      numEl.textContent = `${Math.round(track.scrollLeft / track.offsetWidth) + 1} / ${total}`;
     }, { passive: true });
   });
 }
@@ -1245,58 +1166,39 @@ function initCarousels() {
 // ─────────────────────────────────────────────
 document.getElementById('addForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  if (!hasSettings()) { openSettings(); return; }
-
+  if (!hasSettings()) { showToast('GitHub 未配置', 'err'); return; }
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = '添加中…';
-
   const title    = document.getElementById('f-title').value.trim();
   const analysis = document.getElementById('f-analysis').value.trim();
   const archive  = document.getElementById('f-archive').value.trim();
   const link     = document.getElementById('f-link').value.trim();
   const tags     = getSelectedTags('addTagArea');
-
   try {
     const uploadedPaths = [];
     if (_pendingImages.length) {
-      btn.textContent = `上传图片 0/${_pendingImages.length}…`;
       const ts = Date.now();
       for (let i = 0; i < _pendingImages.length; i++) {
-        const b64 = _pendingImages[i].split(',')[1];
-        const fname = `images/${ts}_${i}.jpg`;
-        await ghPutBinary(fname, b64, `添加图片: ${fname}`);
-        uploadedPaths.push(fname);
         btn.textContent = `上传图片 ${i+1}/${_pendingImages.length}…`;
+        await ghPutBinary(`images/${ts}_${i}.jpg`, _pendingImages[i].split(',')[1], `添加图片`);
+        uploadedPaths.push(`images/${ts}_${i}.jpg`);
       }
     }
     btn.textContent = '保存中…';
-
     const { items, sha } = await loadData();
     const newId = items.length ? Math.max(...items.map(i => i.id)) + 1 : 1;
-    items.push({
-      id: newId, title, analysis, archive, link,
-      tags: tags.length ? tags : [],
-      images: uploadedPaths.length ? uploadedPaths : null,
-      createdAt: new Date().toISOString().split('T')[0]
-    });
+    items.push({ id: newId, title, analysis, archive, link, tags, images: uploadedPaths.length ? uploadedPaths : null, createdAt: new Date().toISOString().split('T')[0] });
     await saveData(items, sha, `添加灵感：${title}`);
-    cacheItems(items);
-    renderGallery(items);
-
-    this.reset();
-    _pendingImages = [];
+    cacheItems(items); renderGallery(items);
+    this.reset(); _pendingImages = [];
     document.getElementById('multiPreview').innerHTML = '';
     document.getElementById('uploadArea').classList.remove('has-image');
     document.getElementById('uploadLabel').style.display = '';
     document.getElementById('uploadLabel').textContent = '点击或拍照上传，可多选';
     renderAddTagArea([]);
-
     showToast('✓ 已添加：' + title, 'ok');
     switchTab('gallery');
-  } catch(e) {
-    showToast('添加失败：' + e.message, 'err');
-    console.error(e);
-  }
+  } catch(e) { showToast('添加失败：' + e.message, 'err'); console.error(e); }
   btn.disabled = false; btn.textContent = '添加到灵感库';
 });
 
@@ -1304,20 +1206,16 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
 // Card menu
 // ─────────────────────────────────────────────
 let _openMenuId = null;
-
 function toggleCardMenu(id) {
   if (_openMenuId === id) { closeCardMenu(); return; }
-  closeCardMenu();
-  _openMenuId = id;
+  closeCardMenu(); _openMenuId = id;
   document.getElementById(`menu-${id}`).classList.add('open');
   setTimeout(() => document.addEventListener('click', closeCardMenu, { once: true }), 0);
 }
-
 function closeCardMenu() {
   if (_openMenuId !== null) {
     const el = document.getElementById(`menu-${_openMenuId}`);
-    if (el) el.classList.remove('open');
-    _openMenuId = null;
+    if (el) el.classList.remove('open'); _openMenuId = null;
   }
 }
 
@@ -1336,13 +1234,10 @@ function openEdit(id) {
   renderEditTagArea(item.tags || []);
   document.getElementById('editOverlay').classList.add('open');
 }
-
-function closeEdit() {
-  document.getElementById('editOverlay').classList.remove('open');
-}
+function closeEdit() { document.getElementById('editOverlay').classList.remove('open'); }
 
 async function saveEditItem() {
-  const id = parseInt(document.getElementById('edit-id').value);
+  const id       = parseInt(document.getElementById('edit-id').value);
   const title    = document.getElementById('edit-title').value.trim();
   const analysis = document.getElementById('edit-analysis').value.trim();
   const archive  = document.getElementById('edit-archive').value.trim();
@@ -1355,17 +1250,11 @@ async function saveEditItem() {
     const { items, sha } = await loadData();
     const item = items.find(i => i.id === id);
     if (!item) throw new Error('找不到该条目');
-    item.title = title; item.analysis = analysis;
-    item.archive = archive; item.link = link;
-    item.tags = tags;
+    Object.assign(item, { title, analysis, archive, link, tags });
     await saveData(items, sha, `编辑灵感：${title}`);
-    cacheItems(items);
-    renderGallery(items);
-    closeEdit();
-    showToast('已保存', 'ok');
-  } catch(e) {
-    showToast('保存失败：' + e.message, 'err');
-  }
+    cacheItems(items); renderGallery(items);
+    closeEdit(); showToast('已保存', 'ok');
+  } catch(e) { showToast('保存失败：' + e.message, 'err'); }
   btn.textContent = '保存'; btn.disabled = false;
 }
 
@@ -1389,8 +1278,7 @@ function switchTab(tab) {
 let toastTimer;
 function showToast(msg, type = 'ok') {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = `toast ${type} show`;
+  el.textContent = msg; el.className = `toast ${type} show`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
 }
@@ -1398,21 +1286,16 @@ function showToast(msg, type = 'ok') {
 // ─────────────────────────────────────────────
 // Auto-config via URL hash
 // ─────────────────────────────────────────────
-let _hashCfg = null;
 (function() {
   try {
-    const hash = location.hash.slice(1);
-    if (!hash) return;
+    const hash = location.hash.slice(1); if (!hash) return;
     const p = new URLSearchParams(hash);
     const t = p.get('t'), o = p.get('o'), r = p.get('r'), b = p.get('b') || 'main';
     if (!t) return;
-    _hashCfg = { t, o, r, b };
-    try {
-      localStorage.setItem('gh_token', t);
-      localStorage.setItem('gh_owner', o);
-      localStorage.setItem('gh_repo', r);
-      localStorage.setItem('gh_branch', b);
-    } catch(e) {}
+    localStorage.setItem('gh_token', t);
+    localStorage.setItem('gh_owner', o);
+    localStorage.setItem('gh_repo', r);
+    localStorage.setItem('gh_branch', b);
   } catch(e) {}
 })();
 
