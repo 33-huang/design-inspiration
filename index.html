@@ -657,6 +657,12 @@ async function saveData(items, sha, message) {
   return ghPut('data.json', JSON.stringify(items, null, 2), sha, message);
 }
 
+async function getWriteBase() {
+  const items = getCachedItems() || [];
+  const meta = await ghGet('data.json');
+  return { items, sha: meta.sha };
+}
+
 // ─────────────────────────────────────────────
 // Tags data
 // ─────────────────────────────────────────────
@@ -1246,7 +1252,7 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
       cacheTagGroups(tagGroups);
       _tagsDirty = false;
     }
-    const { items, sha } = await loadData();
+    const { items, sha } = await getWriteBase();
     const newId = items.length ? Math.max(...items.map(i => i.id)) + 1 : 1;
     items.push({ id: newId, title, analysis, archive, link, tags, images: uploadedPaths.length ? uploadedPaths : null, createdAt: new Date().toISOString().split('T')[0] });
     await saveData(items, sha, `添加灵感：${title}`);
@@ -1313,7 +1319,7 @@ async function saveEditItem() {
       cacheTagGroups(tagGroups);
       _tagsDirty = false;
     }
-    const { items, sha } = await loadData();
+    const { items, sha } = await getWriteBase();
     const item = items.find(i => i.id === id);
     if (!item) throw new Error('找不到该条目');
     Object.assign(item, { title, analysis, archive, link, tags });
