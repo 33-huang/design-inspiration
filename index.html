@@ -576,6 +576,20 @@ function showToast(msg, type = 'ok') {
 }
 
 // ─────────────────────────────────────────────
+// Auto-config via URL hash: #t=TOKEN&o=OWNER&r=REPO&b=BRANCH
+// ─────────────────────────────────────────────
+(function() {
+  const hash = location.hash.slice(1);
+  if (!hash) return;
+  const p = Object.fromEntries(hash.split('&').map(s => s.split('=')));
+  if (p.t) localStorage.setItem('gh_token',  decodeURIComponent(p.t));
+  if (p.o) localStorage.setItem('gh_owner',  decodeURIComponent(p.o));
+  if (p.r) localStorage.setItem('gh_repo',   decodeURIComponent(p.r));
+  if (p.b) localStorage.setItem('gh_branch', decodeURIComponent(p.b));
+  if (p.t || p.o || p.r) history.replaceState(null, '', location.pathname);
+})();
+
+// ─────────────────────────────────────────────
 // Init
 // ─────────────────────────────────────────────
 loadItems();
