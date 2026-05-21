@@ -175,6 +175,13 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
   -webkit-appearance: none;
 }
 .modal-field input:focus { outline: none; border-color: #999; }
+.modal-field textarea {
+  width: 100%; border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px 12px; font-size: 14px; font-family: inherit; line-height: 1.6;
+  background: var(--card); color: var(--fg); resize: none; min-height: 120px;
+  -webkit-appearance: none; white-space: pre-wrap;
+}
+.modal-field textarea:focus { outline: none; border-color: #999; }
 .modal-save {
   width: 100%; background: var(--fg); color: #fff; border: none;
   border-radius: 8px; padding: 13px; font-size: 14px; font-family: inherit;
@@ -287,6 +294,32 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
     </div>
     <button type="submit" class="submit-btn" id="submitBtn">添加到灵感库</button>
   </form>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" id="editOverlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">编辑</div>
+    <input type="hidden" id="edit-id">
+    <div class="modal-field">
+      <label>标题</label>
+      <input type="text" id="edit-title">
+    </div>
+    <div class="modal-field">
+      <label>分析与感受</label>
+      <textarea id="edit-analysis"></textarea>
+    </div>
+    <div class="modal-field">
+      <label>来源整理</label>
+      <input type="text" id="edit-archive">
+    </div>
+    <div class="modal-field">
+      <label>参考链接 / 小红书分享文字</label>
+      <input type="text" id="edit-link">
+    </div>
+    <button class="modal-save" id="editSaveBtn" onclick="saveEditItem()">保存</button>
+  </div>
 </div>
 
 <!-- Bottom nav -->
@@ -525,6 +558,7 @@ function renderGallery(items) {
     <div class="card-footer">
       <button class="card-btn" onclick="copyText('ana-${item.id}', this)">复制分析</button>
       ${linkBtn}
+      <button class="card-btn" onclick="openEdit(${item.id})">编辑</button>
     </div>
   </div>
 </div>`;
@@ -721,6 +755,55 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
     console.error(e);
   }
   btn.disabled = false; btn.textContent = '添加到灵感库';
+});
+
+// ─────────────────────────────────────────────
+// Edit item
+// ─────────────────────────────────────────────
+function openEdit(id) {
+  const cached = getCachedItems();
+  const item = cached && cached.find(i => i.id === id);
+  if (!item) { showToast('找不到该条目', 'err'); return; }
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-title').value = item.title || '';
+  document.getElementById('edit-analysis').value = item.analysis || '';
+  document.getElementById('edit-archive').value = item.archive || '';
+  document.getElementById('edit-link').value = item.link || '';
+  document.getElementById('editOverlay').classList.add('open');
+}
+
+function closeEdit() {
+  document.getElementById('editOverlay').classList.remove('open');
+}
+
+async function saveEditItem() {
+  const id = parseInt(document.getElementById('edit-id').value);
+  const title    = document.getElementById('edit-title').value.trim();
+  const analysis = document.getElementById('edit-analysis').value.trim();
+  const archive  = document.getElementById('edit-archive').value.trim();
+  const link     = document.getElementById('edit-link').value.trim();
+  if (!title || !analysis) { showToast('标题和分析不能为空', 'err'); return; }
+  const btn = document.getElementById('editSaveBtn');
+  btn.textContent = '保存中…'; btn.disabled = true;
+  try {
+    const { items, sha } = await loadData();
+    const item = items.find(i => i.id === id);
+    if (!item) throw new Error('找不到该条目');
+    item.title = title; item.analysis = analysis;
+    item.archive = archive; item.link = link;
+    await saveData(items, sha, `编辑灵感：${title}`);
+    cacheItems(items);
+    renderGallery(items);
+    closeEdit();
+    showToast('已保存', 'ok');
+  } catch(e) {
+    showToast('保存失败：' + e.message, 'err');
+  }
+  btn.textContent = '保存'; btn.disabled = false;
+}
+
+document.getElementById('editOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('editOverlay')) closeEdit();
 });
 
 // ─────────────────────────────────────────────
