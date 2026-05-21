@@ -30,7 +30,8 @@
     "createdAt": "2025-04-25",
     "images": [
       "images/3_0.jpg"
-    ]
+    ],
+    "tags": []
   },
   {
     "id": 4,
@@ -47,11 +48,6 @@
       "images/4_4.jpg",
       "images/4_5.jpg",
       "images/4_6.jpg"
-    ],
-    "tags": [
-      "t3",
-      "t7",
-      "t18"
     ]
   }
 ]
