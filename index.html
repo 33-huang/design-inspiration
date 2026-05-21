@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>设计灵感</title>
+<style>
+:root {
+  --bg: #f5f4f0;
+  --fg: #1a1a1a;
+  --muted: #888;
+  --border: #d8d6d0;
+  --card: #ffffff;
+  --accent: #1a1a1a;
+  --nav-h: 60px;
+  --top-h: 52px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--fg); font-family: 'Georgia', serif; overscroll-behavior: none; }
+
+/* ── Top bar ── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--top-h);
+  background: var(--bg); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px; z-index: 100;
+}
+.topbar h1 { font-size: 16px; font-weight: normal; letter-spacing: 0.06em; }
+.icon-btn {
+  background: none; border: none; cursor: pointer; padding: 6px;
+  color: var(--muted); font-size: 20px; display: flex; align-items: center;
+}
+
+/* ── Bottom nav ── */
+.bottomnav {
+  position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-h);
+  background: var(--bg); border-top: 1px solid var(--border);
+  display: flex; z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-btn {
+  flex: 1; background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 13px; color: var(--muted);
+  letter-spacing: 0.06em; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  transition: color 0.15s;
+}
+.nav-btn.active { color: var(--fg); }
+.nav-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+/* ── Scroll container ── */
+.view {
+  position: fixed; top: var(--top-h); bottom: var(--nav-h); left: 0; right: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);
+}
+.view.hidden { display: none; }
+
+/* ── Gallery ── */
+#gallery { padding: 20px 16px; }
+
+.item-card {
+  background: var(--card); border-radius: 10px; margin-bottom: 20px;
+  overflow: hidden; border: 1px solid var(--border);
+}
+.item-card .card-img { width: 100%; display: block; aspect-ratio: 4/3; object-fit: cover; }
+.item-card .card-body { padding: 14px 16px 16px; }
+.item-card .card-num { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 6px; }
+.item-card .card-title { font-size: 16px; font-weight: normal; margin-bottom: 10px; line-height: 1.4; }
+.item-card .card-analysis {
+  font-size: 14px; line-height: 1.65; color: #3a3a3a;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  transition: all 0.2s;
+}
+.item-card .card-analysis.expanded { -webkit-line-clamp: unset; }
+.item-card .card-archive { font-size: 12px; color: var(--muted); margin-top: 10px; }
+.item-card .card-footer { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.card-btn {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  padding: 5px 12px; font-size: 12px; cursor: pointer; color: #555;
+  font-family: inherit; letter-spacing: 0.03em; transition: all 0.15s;
+}
+.card-btn:active { background: var(--fg); color: #fff; border-color: var(--fg); }
+.expand-btn { color: var(--muted); font-size: 12px; background: none; border: none; cursor: pointer; margin-top: 4px; padding: 0; letter-spacing: 0.03em; }
+
+.empty-state { text-align: center; padding: 80px 32px; color: var(--muted); }
+.empty-state p { font-size: 15px; line-height: 1.7; }
+
+/* ── Loading spinner ── */
+.spinner-wrap { display: flex; justify-content: center; padding: 60px 0; }
+.spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--fg); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Add form ── */
+#addView { padding: 24px 16px; }
+.field { margin-bottom: 20px; }
+.field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; }
+.field input, .field textarea {
+  width: 100%; border: 1px solid var(--border); border-radius: 6px;
+  padding: 11px 13px; font-size: 15px; font-family: inherit;
+  background: var(--card); color: var(--fg);
+  -webkit-appearance: none; appearance: none;
+}
+.field textarea { resize: none; min-height: 110px; line-height: 1.6; }
+.field input:focus, .field textarea:focus { outline: none; border-color: #999; }
+
+.img-upload-area {
+  border: 1.5px dashed var(--border); border-radius: 8px; padding: 28px 16px;
+  text-align: center; cursor: pointer; position: relative; background: var(--card);
+  transition: border-color 0.15s;
+}
+.img-upload-area.has-image { padding: 0; border-style: solid; }
+.img-upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
+.img-upload-area .upload-label { font-size: 14px; color: var(--muted); pointer-events: none; }
+.img-upload-area .upload-label span { display: block; font-size: 24px; margin-bottom: 6px; }
+.img-preview { width: 100%; border-radius: 6px; display: block; max-height: 260px; object-fit: cover; }
+
+.submit-btn {
+  width: 100%; background: var(--fg); color: #fff; border: none;
+  border-radius: 8px; padding: 15px; font-size: 15px; font-family: inherit;
+  letter-spacing: 0.06em; cursor: pointer; margin-top: 8px;
+  transition: opacity 0.15s;
+}
+.submit-btn:disabled { opacity: 0.5; }
+.submit-btn:active { opacity: 0.75; }
+
+.toast {
+  position: fixed; bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));
+  left: 16px; right: 16px; padding: 13px 16px; border-radius: 8px;
+  font-size: 14px; text-align: center; z-index: 200;
+  transform: translateY(20px); opacity: 0; transition: all 0.25s;
+  pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.ok { background: #1a1a1a; color: #fff; }
+.toast.err { background: #c0392b; color: #fff; }
+
+/* ── Settings modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 300; display: flex; align-items: flex-end;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-sheet {
+  background: var(--bg); border-radius: 18px 18px 0 0; width: 100%;
+  padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+  transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+}
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-handle { width: 36px; height: 4px; background: #ccc; border-radius: 2px; margin: 0 auto 20px; }
+.modal-title { font-size: 14px; font-weight: normal; letter-spacing: 0.06em; margin-bottom: 20px; text-transform: uppercase; color: var(--muted); }
+.modal-field { margin-bottom: 14px; }
+.modal-field label { display: block; font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.modal-field input {
+  width: 100%; border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px 12px; font-size: 14px; font-family: inherit;
+  background: var(--card); color: var(--fg);
+  -webkit-appearance: none;
+}
+.modal-field input:focus { outline: none; border-color: #999; }
+.modal-save {
+  width: 100%; background: var(--fg); color: #fff; border: none;
+  border-radius: 8px; padding: 13px; font-size: 14px; font-family: inherit;
+  letter-spacing: 0.06em; cursor: pointer; margin-top: 8px;
+}
+.modal-hint { font-size: 12px; color: var(--muted); margin-top: 12px; text-align: center; line-height: 1.5; }
+.modal-hint a { color: var(--muted); }
+
+/* ── Status badge ── */
+.status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.status-dot.ok { background: #4caf50; }
+.status-dot.err { background: #e53935; }
+.status-dot.idle { background: #ccc; }
+
+/* count badge */
+.count-badge { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <h1>设计灵感</h1>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="statusDot" class="status-dot idle" title="GitHub 连接状态"></span>
+    <button class="icon-btn" id="settingsBtn" aria-label="设置">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Gallery view -->
+<div class="view" id="galleryView">
+  <div id="gallery">
+    <div class="spinner-wrap"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- Add view -->
+<div class="view hidden" id="addView">
+  <form id="addForm">
+    <div class="field">
+      <label>标题 *</label>
+      <input type="text" id="f-title" placeholder="例：涂鸦风格海报" required>
+    </div>
+    <div class="field">
+      <label>图片（可选）</label>
+      <div class="img-upload-area" id="uploadArea">
+        <input type="file" id="f-image" accept="image/*">
+        <div class="upload-label"><span>📷</span>点击或拍照上传</div>
+        <img class="img-preview" id="imgPreview" style="display:none">
+      </div>
+    </div>
+    <div class="field">
+      <label>分析与感受 *</label>
+      <textarea id="f-analysis" placeholder="写下你对这个灵感的分析…" required></textarea>
+    </div>
+    <div class="field">
+      <label>来源整理</label>
+      <input type="text" id="f-archive" placeholder="例：Pinterest → 一场文件夹">
+    </div>
+    <div class="field">
+      <label>参考链接</label>
+      <input type="url" id="f-link" placeholder="https://…">
+    </div>
+    <button type="submit" class="submit-btn" id="submitBtn">添加到灵感库</button>
+  </form>
+</div>
+
+<!-- Bottom nav -->
+<nav class="bottomnav">
+  <button class="nav-btn active" id="navGallery" onclick="switchTab('gallery')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    灵感库
+  </button>
+  <button class="nav-btn" id="navAdd" onclick="switchTab('add')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    添加
+  </button>
+</nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Settings modal -->
+<div class="modal-overlay" id="settingsOverlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">GitHub 设置</div>
+    <div class="modal-field">
+      <label>Personal Access Token</label>
+      <input type="password" id="s-token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+    </div>
+    <div class="modal-field">
+      <label>用户名 / Owner</label>
+      <input type="text" id="s-owner" placeholder="your-username">
+    </div>
+    <div class="modal-field">
+      <label>仓库名 / Repo</label>
+      <input type="text" id="s-repo" placeholder="design-inspiration">
+    </div>
+    <div class="modal-field">
+      <label>分支</label>
+      <input type="text" id="s-branch" placeholder="main">
+    </div>
+    <button class="modal-save" onclick="saveSettings()">保存</button>
+    <p class="modal-hint">
+      Token 需要 <code>repo</code> 权限。<br>
+      数据保存在仓库的 <code>data.json</code> 文件中。
+    </p>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// Settings
+// ─────────────────────────────────────────────
+function getSettings() {
+  return {
+    token:  localStorage.getItem('gh_token')  || '',
+    owner:  localStorage.getItem('gh_owner')  || '',
+    repo:   localStorage.getItem('gh_repo')   || '',
+    branch: localStorage.getItem('gh_branch') || 'main',
+  };
+}
+function hasSettings() {
+  const s = getSettings();
+  return s.token && s.owner && s.repo;
+}
+function saveSettings() {
+  localStorage.setItem('gh_token',  document.getElementById('s-token').value.trim());
+  localStorage.setItem('gh_owner',  document.getElementById('s-owner').value.trim());
+  localStorage.setItem('gh_repo',   document.getElementById('s-repo').value.trim());
+  localStorage.setItem('gh_branch', document.getElementById('s-branch').value.trim() || 'main');
+  closeSettings();
+  showToast('设置已保存', 'ok');
+  loadItems();
+}
+function openSettings() {
+  const s = getSettings();
+  document.getElementById('s-token').value  = s.token;
+  document.getElementById('s-owner').value  = s.owner;
+  document.getElementById('s-repo').value   = s.repo;
+  document.getElementById('s-branch').value = s.branch;
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
+document.getElementById('settingsOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('settingsOverlay')) closeSettings();
+});
+
+// ─────────────────────────────────────────────
+// GitHub API
+// ─────────────────────────────────────────────
+const API = 'https://api.github.com';
+
+async function ghGet(path) {
+  const { token, owner, repo, branch } = getSettings();
+  const res = await fetch(`${API}/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${Date.now()}`, {
+    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+  });
+  if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+async function ghPut(path, content, sha, message) {
+  const { token, owner, repo, branch } = getSettings();
+  const encoded = btoa(unescape(encodeURIComponent(content)));
+  const body = { message, content: encoded, branch };
+  if (sha) body.sha = sha;
+  const res = await fetch(`${API}/repos/${owner}/${repo}/contents/${path}`, {
+    method: 'PUT',
+    headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+async function loadData() {
+  const file = await ghGet('data.json');
+  const raw = decodeURIComponent(escape(atob(file.content.replace(/\s/g, ''))));
+  return { items: JSON.parse(raw), sha: file.sha };
+}
+
+async function saveData(items, sha, message) {
+  const json = JSON.stringify(items, null, 2);
+  return ghPut('data.json', json, sha, message);
+}
+
+// ─────────────────────────────────────────────
+// Cache
+// ─────────────────────────────────────────────
+function cacheItems(items) {
+  try { localStorage.setItem('items_cache', JSON.stringify(items)); } catch(e) {}
+}
+function getCachedItems() {
+  try { return JSON.parse(localStorage.getItem('items_cache') || 'null'); } catch(e) { return null; }
+}
+
+// ─────────────────────────────────────────────
+// Render
+// ─────────────────────────────────────────────
+function renderGallery(items) {
+  const el = document.getElementById('gallery');
+  if (!items || items.length === 0) {
+    el.innerHTML = `<div class="empty-state"><p>还没有灵感条目<br>点击下方「添加」开始收集</p></div>`;
+    return;
+  }
+  // Sort by id descending (newest first)
+  const sorted = [...items].sort((a, b) => b.id - a.id);
+  el.innerHTML = sorted.map((item, idx) => {
+    const num = String(item.id).padStart(2, '0');
+    const imgHtml = item.image
+      ? `<img class="card-img" src="${item.image}" alt="${escHtml(item.title)}" loading="lazy">`
+      : '';
+    const archiveHtml = item.archive
+      ? `<div class="card-archive">整理：${escHtml(item.archive)}</div>` : '';
+    const linkBtn = item.link
+      ? `<button class="card-btn" onclick="copyLink('${escAttr(item.link)}', this)">复制链接</button>` : '';
+    return `
+<div class="item-card">
+  ${imgHtml}
+  <div class="card-body">
+    <div class="card-num">${num}</div>
+    <div class="card-title">${escHtml(item.title)}</div>
+    <div class="card-analysis" id="ana-${item.id}">${escHtml(item.analysis)}</div>
+    <button class="expand-btn" id="exp-${item.id}" onclick="toggleExpand(${item.id})">展开全文</button>
+    ${archiveHtml}
+    <div class="card-footer">
+      <button class="card-btn" onclick="copyText('ana-${item.id}', this)">复制分析</button>
+      ${linkBtn}
+    </div>
+  </div>
+</div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return String(s||'').replace(/'/g,"\\'");
+}
+
+function toggleExpand(id) {
+  const ana = document.getElementById(`ana-${id}`);
+  const btn = document.getElementById(`exp-${id}`);
+  const expanded = ana.classList.toggle('expanded');
+  btn.textContent = expanded ? '收起' : '展开全文';
+}
+
+function copyText(id, btn) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent; btn.textContent = '已复制';
+    setTimeout(() => btn.textContent = orig, 1500);
+  }).catch(() => showToast('复制失败', 'err'));
+}
+function copyLink(url, btn) {
+  navigator.clipboard.writeText(url).then(() => {
+    const orig = btn.textContent; btn.textContent = '已复制';
+    setTimeout(() => btn.textContent = orig, 1500);
+  }).catch(() => showToast('复制失败', 'err'));
+}
+
+// ─────────────────────────────────────────────
+// Load items
+// ─────────────────────────────────────────────
+async function loadItems() {
+  const cached = getCachedItems();
+  if (cached) renderGallery(cached);
+
+  if (!hasSettings()) {
+    document.getElementById('gallery').innerHTML =
+      `<div class="empty-state"><p>请先点击右上角齿轮<br>配置 GitHub 信息</p></div>`;
+    setStatus('err');
+    return;
+  }
+
+  setStatus('idle');
+  try {
+    const { items } = await loadData();
+    cacheItems(items);
+    renderGallery(items);
+    setStatus('ok');
+  } catch (e) {
+    console.error(e);
+    setStatus('err');
+    if (!cached) {
+      document.getElementById('gallery').innerHTML =
+        `<div class="empty-state"><p>加载失败<br><small>${e.message}</small></p></div>`;
+    }
+    showToast('加载失败：' + e.message, 'err');
+  }
+}
+
+function setStatus(s) {
+  const dot = document.getElementById('statusDot');
+  dot.className = 'status-dot ' + s;
+}
+
+// ─────────────────────────────────────────────
+// Image handling
+// ─────────────────────────────────────────────
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('f-image').addEventListener('change', async function() {
+  const file = this.files[0];
+  if (!file) return;
+  const preview = document.getElementById('imgPreview');
+  const area = document.getElementById('uploadArea');
+  const label = area.querySelector('.upload-label');
+  try {
+    const dataUrl = await compressImage(file);
+    preview.src = dataUrl;
+    preview.style.display = 'block';
+    label.style.display = 'none';
+    area.classList.add('has-image');
+  } catch(e) {
+    showToast('图片处理失败', 'err');
+  }
+});
+
+// ─────────────────────────────────────────────
+// Add form submit
+// ─────────────────────────────────────────────
+document.getElementById('addForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  if (!hasSettings()) { openSettings(); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '添加中…';
+
+  const title    = document.getElementById('f-title').value.trim();
+  const analysis = document.getElementById('f-analysis').value.trim();
+  const archive  = document.getElementById('f-archive').value.trim();
+  const link     = document.getElementById('f-link').value.trim();
+  const imgEl    = document.getElementById('imgPreview');
+  const image    = imgEl.style.display !== 'none' ? imgEl.src : null;
+
+  try {
+    const { items, sha } = await loadData();
+    const newId = items.length ? Math.max(...items.map(i => i.id)) + 1 : 1;
+    items.push({
+      id: newId, title, analysis, archive, link,
+      image: image || null,
+      createdAt: new Date().toISOString().split('T')[0]
+    });
+    await saveData(items, sha, `添加灵感：${title}`);
+    cacheItems(items);
+    renderGallery(items);
+
+    // Reset form
+    this.reset();
+    imgEl.style.display = 'none';
+    imgEl.src = '';
+    document.getElementById('uploadArea').classList.remove('has-image');
+    document.querySelector('.upload-label').style.display = '';
+
+    showToast('✓ 已添加：' + title, 'ok');
+    switchTab('gallery');
+  } catch(e) {
+    showToast('添加失败：' + e.message, 'err');
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = '添加到灵感库';
+});
+
+// ─────────────────────────────────────────────
+// Tab switching
+// ─────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('galleryView').classList.toggle('hidden', tab !== 'gallery');
+  document.getElementById('addView').classList.toggle('hidden', tab !== 'add');
+  document.getElementById('navGallery').classList.toggle('active', tab === 'gallery');
+  document.getElementById('navAdd').classList.toggle('active', tab === 'add');
+}
+
+// ─────────────────────────────────────────────
+// Toast
+// ─────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+loadItems();
+</script>
+</body>
+</html>
