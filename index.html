@@ -435,6 +435,25 @@ async function ghPut(path, content, sha, message) {
   return res.json();
 }
 
+async function ghPutBinary(path, base64Data, message) {
+  const { token, owner, repo, branch } = getSettings();
+  const body = { message, content: base64Data, branch };
+  const res = await fetch(`${API}/repos/${owner}/${repo}/contents/${path}`, {
+    method: 'PUT',
+    headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`上传图片失败 ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+function resolveImg(src) {
+  if (!src) return null;
+  if (src.startsWith('data:') || src.startsWith('http')) return src;
+  const { owner, repo } = getSettings();
+  return `https://raw.githubusercontent.com/${owner}/${repo}/main/${src}`;
+}
+
 async function loadData() {
   const { token, owner, repo, branch } = getSettings();
   // Use raw URL to bypass GitHub's 1MB content API limit
@@ -500,7 +519,7 @@ function renderGallery(items) {
     el.className = 'view-list';
     el.innerHTML = sorted.map(item => {
       const num = String(item.id).padStart(2, '0');
-      const firstImg = (item.images && item.images[0]) || item.image || null;
+      const firstImg = resolveImg((item.images && item.images[0]) || item.image || null);
       const thumb = firstImg
         ? `<img class="list-thumb" src="${firstImg}" loading="lazy">`
         : `<div class="list-thumb" style="background:#e0deda;border-radius:5px;"></div>`;
@@ -518,7 +537,7 @@ function renderGallery(items) {
     el.className = 'view-grid';
     const cells = sorted.map(item => {
       const num = String(item.id).padStart(2, '0');
-      const firstImg = (item.images && item.images[0]) || item.image || null;
+      const firstImg = resolveImg((item.images && item.images[0]) || item.image || null);
       const imgHtml = firstImg
         ? `<img class="grid-img" src="${firstImg}" loading="lazy">`
         : `<div class="grid-no-img"><span>✦</span></div>`;
@@ -539,8 +558,7 @@ function renderGallery(items) {
   el.className = '';
   el.innerHTML = cardSorted.map(item => {
     const num = String(item.id).padStart(2, '0');
-    // Normalize: support both old `image` string and new `images` array
-    const imgs = item.images || (item.image ? [item.image] : []);
+    const imgs = (item.images || (item.image ? [item.image] : [])).map(resolveImg).filter(Boolean);
     let mediaHtml = '';
     if (imgs.length === 1) {
       mediaHtml = `<img class="card-img" src="${imgs[0]}" alt="${escHtml(item.title)}" loading="lazy">`;
@@ -732,14 +750,27 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
   const analysis = document.getElementById('f-analysis').value.trim();
   const archive  = document.getElementById('f-archive').value.trim();
   const link     = document.getElementById('f-link').value.trim();
-  const images   = _pendingImages.length ? _pendingImages : null;
-
   try {
+    // Upload images as separate files first
+    const uploadedPaths = [];
+    if (_pendingImages.length) {
+      btn.textContent = `上传图片 0/${_pendingImages.length}…`;
+      const ts = Date.now();
+      for (let i = 0; i < _pendingImages.length; i++) {
+        const b64 = _pendingImages[i].split(',')[1];
+        const fname = `images/${ts}_${i}.jpg`;
+        await ghPutBinary(fname, b64, `添加图片: ${fname}`);
+        uploadedPaths.push(fname);
+        btn.textContent = `上传图片 ${i+1}/${_pendingImages.length}…`;
+      }
+    }
+    btn.textContent = '保存中…';
+
     const { items, sha } = await loadData();
     const newId = items.length ? Math.max(...items.map(i => i.id)) + 1 : 1;
     items.push({
       id: newId, title, analysis, archive, link,
-      images: images || null,
+      images: uploadedPaths.length ? uploadedPaths : null,
       createdAt: new Date().toISOString().split('T')[0]
     });
     await saveData(items, sha, `添加灵感：${title}`);
