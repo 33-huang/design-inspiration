@@ -235,9 +235,14 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 }
 .tag-check-chip.selected { background: var(--fg); color: #fff; border-color: var(--fg); }
 .tag-add-trigger {
-  background: none; border: none; color: var(--muted); font-size: 12px;
-  cursor: pointer; padding: 2px 12px 10px; font-family: inherit; letter-spacing: 0.02em;
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px dashed var(--border); background: none;
+  color: var(--muted); font-size: 16px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; padding: 0; font-family: inherit;
+  transition: border-color 0.12s, color 0.12s;
 }
+.tag-add-trigger:hover { border-color: #999; color: var(--fg); }
 .tag-input-row {
   display: none; align-items: center; gap: 8px; padding: 4px 12px 10px;
 }
@@ -924,8 +929,8 @@ function renderTagCheckboxes(containerId, selectedIds) {
       <div class="tag-check-group-header">${escHtml(g.name)}</div>
       <div class="tag-check-chips">
         ${g.tags.map(t => `<button type="button" data-tag-id="${t.id}" class="tag-check-chip${sel.has(t.id) ? ' selected' : ''}" onclick="this.classList.toggle('selected')">${escHtml(t.name)}</button>`).join('')}
+        <button type="button" class="tag-add-trigger" onclick="showTagInput(this)">＋</button>
       </div>
-      <button type="button" class="tag-add-trigger" onclick="showTagInput(this)">＋ 添加标签</button>
       <div class="tag-input-row">
         <input type="text" id="${containerId}-newtag-${g.id}" placeholder="标签名…"
           onkeydown="if(event.key==='Enter'){event.preventDefault();addInlineTag('${g.id}','${containerId}-newtag-${g.id}','${containerId}')}else if(event.key==='Escape'){hideTagInput(this)}">
@@ -959,7 +964,7 @@ function addInlineTag(groupId, inputId, containerId) {
 
 function showTagInput(btn) {
   btn.style.display = 'none';
-  const row = btn.nextElementSibling;
+  const row = btn.closest('.tag-check-group').querySelector('.tag-input-row');
   row.style.display = 'flex';
   row.querySelector('input').focus();
 }
@@ -967,7 +972,7 @@ function showTagInput(btn) {
 function hideTagInput(el) {
   const row = el.closest('.tag-input-row');
   row.style.display = 'none';
-  row.previousElementSibling.style.display = '';
+  row.closest('.tag-check-group').querySelector('.tag-add-trigger').style.display = '';
 }
 
 function addInlineGroup(inputId, containerId) {
