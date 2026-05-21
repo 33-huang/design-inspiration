@@ -31,7 +31,15 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .icon-btn {
   background: none; border: none; cursor: pointer; padding: 6px;
   color: var(--muted); font-size: 20px; display: flex; align-items: center;
+  position: relative;
 }
+.filter-badge {
+  position: absolute; top: 2px; right: 2px;
+  background: var(--fg); color: #fff; border-radius: 50%;
+  width: 14px; height: 14px; font-size: 9px; display: none;
+  align-items: center; justify-content: center; font-family: sans-serif;
+}
+.filter-badge.show { display: flex; }
 
 /* ── Bottom nav ── */
 .bottomnav {
@@ -57,6 +65,25 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
   padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);
 }
 .view.hidden { display: none; }
+
+/* ── Active filter bar ── */
+.filter-active-bar {
+  display: none; align-items: center; gap: 8px; padding: 9px 16px;
+  border-bottom: 1px solid var(--border); background: var(--bg);
+  overflow-x: auto; scrollbar-width: none; flex-shrink: 0;
+}
+.filter-active-bar::-webkit-scrollbar { display: none; }
+.filter-active-bar.show { display: flex; }
+.filter-active-chip {
+  flex-shrink: 0; background: var(--fg); color: #fff;
+  border-radius: 20px; padding: 4px 10px; font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.filter-clear-btn {
+  flex-shrink: 0; background: none; border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 10px; font-size: 12px;
+  color: var(--muted); cursor: pointer; font-family: inherit;
+}
 
 /* ── Gallery ── */
 #gallery { padding: 20px 16px; }
@@ -111,6 +138,21 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .card-menu-item:active { background: var(--bg); }
 .expand-btn { color: var(--muted); font-size: 12px; background: none; border: none; cursor: pointer; margin-top: 4px; padding: 0; letter-spacing: 0.03em; }
 
+/* ── Tag display in card ── */
+.card-tag-toggle {
+  display: block; font-size: 12px; color: var(--muted); background: none;
+  border: none; cursor: pointer; padding: 0; margin-top: 10px;
+  letter-spacing: 0.03em; font-family: inherit;
+}
+.card-tag-area { display: none; margin-top: 8px; }
+.card-tag-area.show { display: block; }
+.card-tag-group { font-size: 12px; color: #555; line-height: 1.8; margin-bottom: 2px; }
+.card-tag-group-name { color: var(--muted); }
+.card-tag-chip {
+  display: inline-block; background: #eeecea; border-radius: 3px;
+  padding: 1px 6px; margin: 0 2px; font-size: 11px; color: #444;
+}
+
 .empty-state { text-align: center; padding: 80px 32px; color: var(--muted); }
 .empty-state p { font-size: 15px; line-height: 1.7; }
 
@@ -145,6 +187,28 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .multi-preview::-webkit-scrollbar { display: none; }
 .multi-preview img { height: 88px; width: auto; border-radius: 6px; flex-shrink: 0; object-fit: cover; display: block; }
 
+/* ── Tag checkboxes ── */
+.tag-check-area {
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--card); overflow: hidden;
+}
+.tag-check-group { border-bottom: 1px solid var(--border); }
+.tag-check-group:last-child { border-bottom: none; }
+.tag-check-group-header {
+  padding: 10px 13px; font-size: 12px; color: var(--muted);
+  letter-spacing: 0.06em; text-transform: uppercase; background: #f8f7f4;
+}
+.tag-check-chips { padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-check-chip {
+  padding: 5px 10px; border-radius: 20px; font-size: 13px;
+  border: 1px solid var(--border); background: var(--bg);
+  cursor: pointer; font-family: inherit; color: var(--fg);
+  transition: all 0.12s; -webkit-tap-highlight-color: transparent;
+}
+.tag-check-chip.selected {
+  background: var(--fg); color: #fff; border-color: var(--fg);
+}
+
 .submit-btn {
   width: 100%; background: var(--fg); color: #fff; border: none;
   border-radius: 8px; padding: 15px; font-size: 15px; font-family: inherit;
@@ -165,7 +229,7 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .toast.ok { background: #1a1a1a; color: #fff; }
 .toast.err { background: #c0392b; color: #fff; }
 
-/* ── Settings modal ── */
+/* ── Modals ── */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.4);
   z-index: 300; display: flex; align-items: flex-end;
@@ -176,9 +240,10 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
   background: var(--bg); border-radius: 18px 18px 0 0; width: 100%;
   padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
   transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  max-height: 90vh; overflow-y: auto;
 }
 .modal-overlay.open .modal-sheet { transform: translateY(0); }
-.modal-handle { width: 36px; height: 4px; background: #ccc; border-radius: 2px; margin: 0 auto 20px; }
+.modal-handle { width: 36px; height: 4px; background: #ccc; border-radius: 2px; margin: 0 auto 20px; flex-shrink: 0; }
 .modal-title { font-size: 14px; font-weight: normal; letter-spacing: 0.06em; margin-bottom: 20px; text-transform: uppercase; color: var(--muted); }
 .modal-field { margin-bottom: 14px; }
 .modal-field label { display: block; font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
@@ -246,6 +311,72 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 
 /* count badge */
 .count-badge { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; }
+
+/* ── Filter modal ── */
+.filter-modal-group { margin-bottom: 18px; }
+.filter-modal-group-name { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+.filter-modal-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.filter-modal-chip {
+  padding: 6px 12px; border-radius: 20px; font-size: 13px;
+  border: 1px solid var(--border); background: var(--bg);
+  cursor: pointer; font-family: inherit; color: var(--fg);
+  transition: all 0.12s;
+}
+.filter-modal-chip.selected { background: var(--fg); color: #fff; border-color: var(--fg); }
+.filter-clear-all {
+  width: 100%; background: none; border: 1px solid var(--border); border-radius: 8px;
+  padding: 11px; font-size: 13px; font-family: inherit; color: var(--muted);
+  cursor: pointer; margin-top: 4px; letter-spacing: 0.04em;
+}
+
+/* ── Tag management ── */
+.tag-mgmt-btn {
+  width: 100%; background: none; border: 1px solid var(--border); border-radius: 8px;
+  padding: 11px; font-size: 13px; font-family: inherit; color: var(--muted);
+  cursor: pointer; margin-top: 8px; letter-spacing: 0.04em; text-align: center;
+}
+.tag-mgmt-group { margin-bottom: 20px; }
+.tag-mgmt-group-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.tag-mgmt-group-name { font-size: 13px; font-weight: normal; }
+.tag-mgmt-del-btn {
+  background: none; border: none; color: #c0392b; font-size: 13px;
+  cursor: pointer; padding: 2px 6px; font-family: inherit;
+}
+.tag-mgmt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.tag-mgmt-chip {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px; font-size: 12px;
+  border: 1px solid var(--border); background: var(--bg);
+}
+.tag-mgmt-chip-del { background: none; border: none; color: #aaa; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
+.tag-mgmt-add-tag {
+  display: flex; gap: 6px; margin-top: 4px;
+}
+.tag-mgmt-add-tag input {
+  flex: 1; border: 1px solid var(--border); border-radius: 6px;
+  padding: 7px 10px; font-size: 13px; font-family: inherit;
+  background: var(--card); color: var(--fg); -webkit-appearance: none;
+}
+.tag-mgmt-add-tag input:focus { outline: none; border-color: #999; }
+.tag-mgmt-add-tag button {
+  background: var(--fg); color: #fff; border: none; border-radius: 6px;
+  padding: 7px 14px; font-size: 13px; font-family: inherit; cursor: pointer;
+}
+.tag-mgmt-new-group { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+.tag-mgmt-new-group-row { display: flex; gap: 6px; }
+.tag-mgmt-new-group-row input {
+  flex: 1; border: 1px solid var(--border); border-radius: 6px;
+  padding: 9px 12px; font-size: 14px; font-family: inherit;
+  background: var(--card); color: var(--fg); -webkit-appearance: none;
+}
+.tag-mgmt-new-group-row input:focus { outline: none; border-color: #999; }
+.tag-mgmt-new-group-row button {
+  background: var(--fg); color: #fff; border: none; border-radius: 6px;
+  padding: 9px 16px; font-size: 14px; font-family: inherit; cursor: pointer;
+}
 </style>
 </head>
 <body>
@@ -253,7 +384,7 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 <!-- Top bar -->
 <div class="topbar">
   <h1>设计灵感</h1>
-  <div style="display:flex;align-items:center;gap:10px;">
+  <div style="display:flex;align-items:center;gap:8px;">
     <div class="view-toggle">
       <button class="vt-btn" id="vt-list" onclick="setView('list')" title="文字目录">
         <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
@@ -265,6 +396,10 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="5" rx="1"/><rect x="3" y="10" width="18" height="5" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
       </button>
     </div>
+    <button class="icon-btn" id="filterBtn" onclick="openFilterModal()" title="筛选">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <span class="filter-badge" id="filterBadge"></span>
+    </button>
     <span id="statusDot" class="status-dot idle" title="GitHub 连接状态"></span>
     <button class="icon-btn" id="settingsBtn" aria-label="设置">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -274,6 +409,10 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 
 <!-- Gallery view -->
 <div class="view" id="galleryView">
+  <div class="filter-active-bar" id="filterActiveBar">
+    <!-- chips injected here -->
+    <button class="filter-clear-btn" onclick="clearFilters()">清除筛选</button>
+  </div>
   <div id="gallery">
     <div class="spinner-wrap"><div class="spinner"></div></div>
   </div>
@@ -306,6 +445,10 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
       <label>参考链接 / 小红书分享文字</label>
       <input type="text" id="f-link" placeholder="链接或小红书复制的分享文字均可">
     </div>
+    <div class="field" id="addTagField" style="display:none;">
+      <label>标签</label>
+      <div class="tag-check-area" id="addTagArea"></div>
+    </div>
     <button type="submit" class="submit-btn" id="submitBtn">添加到灵感库</button>
   </form>
 </div>
@@ -332,7 +475,39 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
       <label>参考链接 / 小红书分享文字</label>
       <input type="text" id="edit-link">
     </div>
+    <div class="modal-field" id="editTagField" style="display:none;">
+      <label>标签</label>
+      <div class="tag-check-area" id="editTagArea"></div>
+    </div>
     <button class="modal-save" id="editSaveBtn" onclick="saveEditItem()">保存</button>
+  </div>
+</div>
+
+<!-- Filter modal -->
+<div class="modal-overlay" id="filterOverlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">筛选标签</div>
+    <div id="filterModalContent"></div>
+    <button class="filter-clear-all" onclick="clearFilters(); closeFilterModal()">清除全部筛选</button>
+    <button class="modal-save" onclick="closeFilterModal()" style="margin-top:10px;">完成</button>
+  </div>
+</div>
+
+<!-- Tag management modal -->
+<div class="modal-overlay" id="tagMgmtOverlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">管理标签</div>
+    <div id="tagMgmtContent"></div>
+    <div class="tag-mgmt-new-group">
+      <div style="font-size:12px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">新增分组</div>
+      <div class="tag-mgmt-new-group-row">
+        <input type="text" id="newGroupName" placeholder="分组名称">
+        <button onclick="addTagGroup()">添加</button>
+      </div>
+    </div>
+    <button class="modal-save" onclick="saveTagMgmt()" style="margin-top:16px;">保存标签</button>
   </div>
 </div>
 
@@ -373,6 +548,7 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
       <input type="text" id="s-branch" placeholder="main">
     </div>
     <button class="modal-save" onclick="saveSettings()">保存</button>
+    <button class="tag-mgmt-btn" onclick="closeSettings(); openTagMgmt()">管理标签 →</button>
     <p class="modal-hint">
       Token 需要 <code>repo</code> 权限。<br>
       数据保存在仓库的 <code>data.json</code> 文件中。
@@ -470,12 +646,10 @@ function resolveImg(src) {
 
 async function loadData() {
   const { token, owner, repo, branch } = getSettings();
-  // Use raw URL to bypass GitHub's 1MB content API limit
   const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data.json?t=${Date.now()}`;
   const rawRes = await fetch(rawUrl);
   if (!rawRes.ok) throw new Error(`读取失败 ${rawRes.status}`);
   const items = await rawRes.json();
-  // Get SHA separately (contents API always returns sha even for large files)
   const meta = await ghGet('data.json');
   return { items, sha: meta.sha };
 }
@@ -483,6 +657,282 @@ async function loadData() {
 async function saveData(items, sha, message) {
   const json = JSON.stringify(items, null, 2);
   return ghPut('data.json', json, sha, message);
+}
+
+// ─────────────────────────────────────────────
+// Tags data
+// ─────────────────────────────────────────────
+let tagGroups = [];
+let _tagsSha = null;
+
+async function loadTagsData() {
+  const { owner, repo, branch } = getSettings();
+  try {
+    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/tags.json?t=${Date.now()}`;
+    const res = await fetch(rawUrl);
+    if (!res.ok) return;
+    const data = await res.json();
+    tagGroups = data.groups || [];
+    try {
+      const meta = await ghGet('tags.json');
+      _tagsSha = meta.sha;
+    } catch(e) {}
+  } catch(e) {
+    tagGroups = [];
+  }
+}
+
+async function saveTagsData(groups) {
+  const json = JSON.stringify({ groups }, null, 2);
+  const result = await ghPut('tags.json', json, _tagsSha || null, '更新标签');
+  _tagsSha = result.content.sha;
+  tagGroups = groups;
+}
+
+function getTagById(id) {
+  for (const g of tagGroups) {
+    const t = g.tags.find(t => t.id === id);
+    if (t) return { tag: t, group: g };
+  }
+  return null;
+}
+
+function cacheTagGroups(groups) {
+  try { localStorage.setItem('tags_cache', JSON.stringify(groups)); } catch(e) {}
+}
+function getCachedTagGroups() {
+  try { return JSON.parse(localStorage.getItem('tags_cache') || 'null'); } catch(e) { return null; }
+}
+
+// ─────────────────────────────────────────────
+// Filter state
+// ─────────────────────────────────────────────
+let activeFilters = new Set();
+
+function toggleFilter(tagId) {
+  if (activeFilters.has(tagId)) activeFilters.delete(tagId);
+  else activeFilters.add(tagId);
+  updateFilterBadge();
+  updateFilterActiveBar();
+  const cached = getCachedItems();
+  if (cached) renderGallery(cached);
+  // re-render filter modal chips
+  renderFilterModalContent();
+}
+
+function clearFilters() {
+  activeFilters.clear();
+  updateFilterBadge();
+  updateFilterActiveBar();
+  const cached = getCachedItems();
+  if (cached) renderGallery(cached);
+  renderFilterModalContent();
+}
+
+function updateFilterBadge() {
+  const badge = document.getElementById('filterBadge');
+  const n = activeFilters.size;
+  badge.textContent = n;
+  badge.classList.toggle('show', n > 0);
+}
+
+function updateFilterActiveBar() {
+  const bar = document.getElementById('filterActiveBar');
+  if (activeFilters.size === 0) { bar.classList.remove('show'); return; }
+  bar.classList.add('show');
+  // remove old chips (keep the clear button at end)
+  const clearBtn = bar.querySelector('.filter-clear-btn');
+  bar.innerHTML = '';
+  activeFilters.forEach(id => {
+    const found = getTagById(id);
+    if (!found) return;
+    const chip = document.createElement('span');
+    chip.className = 'filter-active-chip';
+    chip.textContent = found.tag.name;
+    bar.appendChild(chip);
+  });
+  bar.appendChild(clearBtn);
+}
+
+function getFilteredItems(items) {
+  if (activeFilters.size === 0) return items;
+  return items.filter(item => {
+    const itemTags = new Set(item.tags || []);
+    for (const id of activeFilters) {
+      if (itemTags.has(id)) return true;
+    }
+    return false;
+  });
+}
+
+// ─────────────────────────────────────────────
+// Filter modal
+// ─────────────────────────────────────────────
+function openFilterModal() {
+  renderFilterModalContent();
+  document.getElementById('filterOverlay').classList.add('open');
+}
+function closeFilterModal() {
+  document.getElementById('filterOverlay').classList.remove('open');
+}
+document.getElementById('filterOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('filterOverlay')) closeFilterModal();
+});
+
+function renderFilterModalContent() {
+  const el = document.getElementById('filterModalContent');
+  if (!tagGroups.length) {
+    el.innerHTML = '<p style="font-size:14px;color:var(--muted);margin-bottom:16px;">还没有标签，请先在设置中管理标签。</p>';
+    return;
+  }
+  el.innerHTML = tagGroups.map(g => `
+    <div class="filter-modal-group">
+      <div class="filter-modal-group-name">${escHtml(g.name)}</div>
+      <div class="filter-modal-chips">
+        ${g.tags.map(t => `
+          <button class="filter-modal-chip${activeFilters.has(t.id) ? ' selected' : ''}"
+            onclick="toggleFilter('${t.id}')">${escHtml(t.name)}</button>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────
+// Tag management modal
+// ─────────────────────────────────────────────
+let _editingGroups = [];
+
+function openTagMgmt() {
+  _editingGroups = JSON.parse(JSON.stringify(tagGroups));
+  renderTagMgmtContent();
+  document.getElementById('tagMgmtOverlay').classList.add('open');
+}
+function closeTagMgmt() {
+  document.getElementById('tagMgmtOverlay').classList.remove('open');
+}
+document.getElementById('tagMgmtOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('tagMgmtOverlay')) closeTagMgmt();
+});
+
+function renderTagMgmtContent() {
+  const el = document.getElementById('tagMgmtContent');
+  el.innerHTML = _editingGroups.map((g, gi) => `
+    <div class="tag-mgmt-group">
+      <div class="tag-mgmt-group-header">
+        <span class="tag-mgmt-group-name">${escHtml(g.name)}</span>
+        <button class="tag-mgmt-del-btn" onclick="deleteTagGroup(${gi})">删除分组</button>
+      </div>
+      <div class="tag-mgmt-chips">
+        ${g.tags.map((t, ti) => `
+          <span class="tag-mgmt-chip">
+            ${escHtml(t.name)}
+            <button class="tag-mgmt-chip-del" onclick="deleteTag(${gi},${ti})" title="删除">×</button>
+          </span>
+        `).join('')}
+      </div>
+      <div class="tag-mgmt-add-tag">
+        <input type="text" id="newtag-${gi}" placeholder="新标签名">
+        <button onclick="addTag(${gi})">添加</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addTagGroup() {
+  const input = document.getElementById('newGroupName');
+  const name = input.value.trim();
+  if (!name) return;
+  const gid = 'g' + Date.now();
+  _editingGroups.push({ id: gid, name, tags: [] });
+  input.value = '';
+  renderTagMgmtContent();
+}
+
+function deleteTagGroup(gi) {
+  _editingGroups.splice(gi, 1);
+  renderTagMgmtContent();
+}
+
+function addTag(gi) {
+  const input = document.getElementById(`newtag-${gi}`);
+  const name = input.value.trim();
+  if (!name) return;
+  const tid = 't' + Date.now();
+  _editingGroups[gi].tags.push({ id: tid, name });
+  input.value = '';
+  renderTagMgmtContent();
+}
+
+function deleteTag(gi, ti) {
+  _editingGroups[gi].tags.splice(ti, 1);
+  renderTagMgmtContent();
+}
+
+async function saveTagMgmt() {
+  const btn = document.querySelector('#tagMgmtOverlay .modal-save');
+  btn.textContent = '保存中…'; btn.disabled = true;
+  try {
+    await saveTagsData(_editingGroups);
+    cacheTagGroups(_editingGroups);
+    closeTagMgmt();
+    showToast('标签已保存', 'ok');
+    renderAddTagArea([]);
+    renderEditTagArea([]);
+  } catch(e) {
+    showToast('保存失败：' + e.message, 'err');
+  }
+  btn.textContent = '保存标签'; btn.disabled = false;
+}
+
+// ─────────────────────────────────────────────
+// Tag checkboxes (add / edit forms)
+// ─────────────────────────────────────────────
+function renderTagCheckboxes(containerId, selectedIds) {
+  const el = document.getElementById(containerId);
+  if (!tagGroups.length) { el.innerHTML = ''; return; }
+  const sel = new Set(selectedIds || []);
+  el.innerHTML = tagGroups.map(g => `
+    <div class="tag-check-group">
+      <div class="tag-check-group-header">${escHtml(g.name)}</div>
+      <div class="tag-check-chips">
+        ${g.tags.map(t => `
+          <button type="button"
+            class="tag-check-chip${sel.has(t.id) ? ' selected' : ''}"
+            onclick="toggleTagChip(this,'${t.id}','${containerId}')">
+            ${escHtml(t.name)}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleTagChip(btn, tagId, containerId) {
+  btn.classList.toggle('selected');
+}
+
+function getSelectedTags(containerId) {
+  const el = document.getElementById(containerId);
+  return [...el.querySelectorAll('.tag-check-chip.selected')].map(b => {
+    const onclickStr = b.getAttribute('onclick');
+    const m = onclickStr.match(/'([^']+)'/);
+    return m ? m[1] : null;
+  }).filter(Boolean);
+}
+
+function renderAddTagArea(selectedIds) {
+  const field = document.getElementById('addTagField');
+  if (!tagGroups.length) { field.style.display = 'none'; return; }
+  field.style.display = '';
+  renderTagCheckboxes('addTagArea', selectedIds);
+}
+
+function renderEditTagArea(selectedIds) {
+  const field = document.getElementById('editTagField');
+  if (!tagGroups.length) { field.style.display = 'none'; return; }
+  field.style.display = '';
+  renderTagCheckboxes('editTagArea', selectedIds);
 }
 
 // ─────────────────────────────────────────────
@@ -521,13 +971,40 @@ function jumpToCard(id) {
 // ─────────────────────────────────────────────
 // Render
 // ─────────────────────────────────────────────
+function renderTagsInCard(item) {
+  if (!tagGroups.length || !item.tags || !item.tags.length) return '';
+  const byGroup = {};
+  item.tags.forEach(tid => {
+    const found = getTagById(tid);
+    if (!found) return;
+    if (!byGroup[found.group.id]) byGroup[found.group.id] = { name: found.group.name, tags: [] };
+    byGroup[found.group.id].tags.push(found.tag.name);
+  });
+  const rows = Object.values(byGroup).map(g =>
+    `<div class="card-tag-group"><span class="card-tag-group-name">${escHtml(g.name)}：</span>${g.tags.map(n => `<span class="card-tag-chip">${escHtml(n)}</span>`).join('')}</div>`
+  ).join('');
+  if (!rows) return '';
+  return `
+    <button class="card-tag-toggle" onclick="toggleCardTags(this)">显示标签</button>
+    <div class="card-tag-area">${rows}</div>`;
+}
+
+function toggleCardTags(btn) {
+  const area = btn.nextElementSibling;
+  const show = area.classList.toggle('show');
+  btn.textContent = show ? '收起标签' : '显示标签';
+}
+
 function renderGallery(items) {
+  const filtered = getFilteredItems(items);
   const el = document.getElementById('gallery');
-  if (!items || items.length === 0) {
-    el.innerHTML = `<div class="empty-state"><p>还没有灵感条目<br>点击下方「添加」开始收集</p></div>`;
+  if (!filtered || filtered.length === 0) {
+    el.innerHTML = activeFilters.size > 0
+      ? `<div class="empty-state"><p>没有符合当前筛选条件的条目</p></div>`
+      : `<div class="empty-state"><p>还没有灵感条目<br>点击下方「添加」开始收集</p></div>`;
     return;
   }
-  const sorted = [...items].sort((a, b) => a.id - b.id); // oldest first for directory numbering
+  const sorted = [...filtered].sort((a, b) => a.id - b.id);
 
   if (currentView === 'list') {
     el.className = 'view-list';
@@ -567,8 +1044,8 @@ function renderGallery(items) {
     return;
   }
 
-  // Card view (default) — newest first
-  const cardSorted = [...items].sort((a, b) => b.id - a.id);
+  // Card view — newest first
+  const cardSorted = [...filtered].sort((a, b) => b.id - a.id);
   el.className = '';
   el.innerHTML = cardSorted.map(item => {
     const num = String(item.id).padStart(2, '0');
@@ -584,6 +1061,7 @@ function renderGallery(items) {
       ? `<div class="card-archive">整理：${escHtml(item.archive)}</div>` : '';
     const linkMenuItem = item.link
       ? `<button class="card-menu-item" onclick="copyLink('${escAttr(item.link)}', this); closeCardMenu()">复制链接</button>` : '';
+    const tagsHtml = renderTagsInCard(item);
     return `
 <div class="item-card" id="card-${item.id}">
   ${mediaHtml}
@@ -593,6 +1071,7 @@ function renderGallery(items) {
     <div class="card-analysis" id="ana-${item.id}">${escHtml(item.analysis)}</div>
     <button class="expand-btn" id="exp-${item.id}" onclick="toggleExpand(${item.id})">展开全文</button>
     ${archiveHtml}
+    ${tagsHtml}
     <div class="card-menu-wrap">
       <button class="card-menu-btn" onclick="event.stopPropagation(); toggleCardMenu(${item.id})">···</button>
       <div class="card-menu" id="menu-${item.id}">
@@ -640,13 +1119,14 @@ function copyLink(url, btn) {
 // ─────────────────────────────────────────────
 async function loadItems() {
   const cached = getCachedItems();
+  const cachedTags = getCachedTagGroups();
+  if (cachedTags) tagGroups = cachedTags;
   if (cached) renderGallery(cached);
 
   if (!hasSettings()) {
     document.getElementById('gallery').innerHTML =
       `<div class="empty-state"><p>请先点击右上角齿轮<br>配置 GitHub 信息</p></div>`;
     setStatus('err');
-    // If hash config was provided but localStorage failed, auto-open modal prefilled
     if (_hashCfg) {
       document.getElementById('s-token').value  = _hashCfg.t || '';
       document.getElementById('s-owner').value  = _hashCfg.o || '';
@@ -659,9 +1139,15 @@ async function loadItems() {
 
   setStatus('idle');
   try {
-    const { items } = await loadData();
+    const [dataResult] = await Promise.all([
+      loadData(),
+      loadTagsData()
+    ]);
+    const { items } = dataResult;
     cacheItems(items);
+    cacheTagGroups(tagGroups);
     renderGallery(items);
+    renderAddTagArea([]);
     setStatus('ok');
   } catch (e) {
     console.error(e);
@@ -682,7 +1168,7 @@ function setStatus(s) {
 // ─────────────────────────────────────────────
 // Image handling
 // ─────────────────────────────────────────────
-const MAX_TOTAL_B64 = 1398101; // 1MB as base64 chars
+const MAX_TOTAL_B64 = 1398101;
 
 function readImageElement(file) {
   return new Promise((resolve, reject) => {
@@ -721,7 +1207,7 @@ async function compressFiles(files) {
   return results;
 }
 
-let _pendingImages = []; // compressed data URLs ready for submit
+let _pendingImages = [];
 
 document.getElementById('f-image').addEventListener('change', async function() {
   const files = [...this.files];
@@ -767,8 +1253,9 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
   const analysis = document.getElementById('f-analysis').value.trim();
   const archive  = document.getElementById('f-archive').value.trim();
   const link     = document.getElementById('f-link').value.trim();
+  const tags     = getSelectedTags('addTagArea');
+
   try {
-    // Upload images as separate files first
     const uploadedPaths = [];
     if (_pendingImages.length) {
       btn.textContent = `上传图片 0/${_pendingImages.length}…`;
@@ -787,6 +1274,7 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
     const newId = items.length ? Math.max(...items.map(i => i.id)) + 1 : 1;
     items.push({
       id: newId, title, analysis, archive, link,
+      tags: tags.length ? tags : [],
       images: uploadedPaths.length ? uploadedPaths : null,
       createdAt: new Date().toISOString().split('T')[0]
     });
@@ -794,13 +1282,13 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
     cacheItems(items);
     renderGallery(items);
 
-    // Reset form
     this.reset();
     _pendingImages = [];
     document.getElementById('multiPreview').innerHTML = '';
     document.getElementById('uploadArea').classList.remove('has-image');
     document.getElementById('uploadLabel').style.display = '';
     document.getElementById('uploadLabel').textContent = '点击或拍照上传，可多选';
+    renderAddTagArea([]);
 
     showToast('✓ 已添加：' + title, 'ok');
     switchTab('gallery');
@@ -844,6 +1332,7 @@ function openEdit(id) {
   document.getElementById('edit-analysis').value = item.analysis || '';
   document.getElementById('edit-archive').value = item.archive || '';
   document.getElementById('edit-link').value = item.link || '';
+  renderEditTagArea(item.tags || []);
   document.getElementById('editOverlay').classList.add('open');
 }
 
@@ -857,6 +1346,7 @@ async function saveEditItem() {
   const analysis = document.getElementById('edit-analysis').value.trim();
   const archive  = document.getElementById('edit-archive').value.trim();
   const link     = document.getElementById('edit-link').value.trim();
+  const tags     = getSelectedTags('editTagArea');
   if (!title || !analysis) { showToast('标题和分析不能为空', 'err'); return; }
   const btn = document.getElementById('editSaveBtn');
   btn.textContent = '保存中…'; btn.disabled = true;
@@ -866,6 +1356,7 @@ async function saveEditItem() {
     if (!item) throw new Error('找不到该条目');
     item.title = title; item.analysis = analysis;
     item.archive = archive; item.link = link;
+    item.tags = tags;
     await saveData(items, sha, `编辑灵感：${title}`);
     cacheItems(items);
     renderGallery(items);
@@ -904,7 +1395,7 @@ function showToast(msg, type = 'ok') {
 }
 
 // ─────────────────────────────────────────────
-// Auto-config via URL hash: #t=TOKEN&o=OWNER&r=REPO&b=BRANCH
+// Auto-config via URL hash
 // ─────────────────────────────────────────────
 let _hashCfg = null;
 (function() {
