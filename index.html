@@ -72,9 +72,12 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .carousel-track { display: flex; overflow-x: scroll; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .carousel-track::-webkit-scrollbar { display: none; }
 .carousel-img { flex-shrink: 0; width: 100%; height: auto; display: block; scroll-snap-align: start; }
-.carousel-dots { display: flex; justify-content: center; gap: 5px; padding: 8px 0 2px; }
-.dot { width: 5px; height: 5px; border-radius: 50%; background: #ccc; transition: background 0.15s; }
-.dot.active { background: var(--fg); }
+.carousel-num {
+  position: absolute; bottom: 10px; right: 10px;
+  background: rgba(0,0,0,0.42); color: #fff; font-size: 12px;
+  padding: 3px 9px; border-radius: 20px; letter-spacing: 0.04em;
+  pointer-events: none; font-family: 'Georgia', serif;
+}
 .item-card .card-body { padding: 14px 16px 16px; }
 .item-card .card-num { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 6px; }
 .item-card .card-title { font-size: 16px; font-weight: normal; margin-bottom: 10px; line-height: 1.4; }
@@ -279,8 +282,8 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
       <input type="text" id="f-archive" placeholder="例：Pinterest → 一场文件夹">
     </div>
     <div class="field">
-      <label>参考链接</label>
-      <input type="url" id="f-link" placeholder="https://…">
+      <label>参考链接 / 小红书分享文字</label>
+      <input type="text" id="f-link" placeholder="链接或小红书复制的分享文字均可">
     </div>
     <button type="submit" class="submit-btn" id="submitBtn">添加到灵感库</button>
   </form>
@@ -504,8 +507,7 @@ function renderGallery(items) {
       mediaHtml = `<img class="card-img" src="${imgs[0]}" alt="${escHtml(item.title)}" loading="lazy">`;
     } else if (imgs.length > 1) {
       const slides = imgs.map(src => `<img class="carousel-img" src="${src}" loading="lazy">`).join('');
-      const dots = imgs.map((_, i) => `<span class="dot${i === 0 ? ' active' : ''}"></span>`).join('');
-      mediaHtml = `<div class="carousel-wrap"><div class="carousel-track">${slides}</div><div class="carousel-dots">${dots}</div></div>`;
+      mediaHtml = `<div class="carousel-wrap"><div class="carousel-track" data-total="${imgs.length}">${slides}</div><div class="carousel-num">1 / ${imgs.length}</div></div>`;
     }
     const archiveHtml = item.archive
       ? `<div class="card-archive">整理：${escHtml(item.archive)}</div>` : '';
@@ -666,11 +668,12 @@ document.getElementById('f-image').addEventListener('change', async function() {
 
 function initCarousels() {
   document.querySelectorAll('.carousel-track').forEach(track => {
-    const dotsEl = track.nextElementSibling;
-    if (!dotsEl) return;
+    const numEl = track.nextElementSibling;
+    if (!numEl) return;
+    const total = parseInt(track.dataset.total) || 1;
     track.addEventListener('scroll', () => {
-      const idx = Math.round(track.scrollLeft / track.offsetWidth);
-      [...dotsEl.children].forEach((d, i) => d.classList.toggle('active', i === idx));
+      const idx = Math.round(track.scrollLeft / track.offsetWidth) + 1;
+      numEl.textContent = `${idx} / ${total}`;
     }, { passive: true });
   });
 }
