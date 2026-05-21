@@ -65,7 +65,16 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
   background: var(--card); border-radius: 10px; margin-bottom: 20px;
   overflow: hidden; border: 1px solid var(--border);
 }
-.item-card .card-img { width: 100%; display: block; aspect-ratio: 4/3; object-fit: cover; }
+.item-card .card-img { width: 100%; display: block; height: auto; }
+
+/* ── Carousel ── */
+.carousel-wrap { position: relative; }
+.carousel-track { display: flex; overflow-x: scroll; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.carousel-track::-webkit-scrollbar { display: none; }
+.carousel-img { flex-shrink: 0; width: 100%; height: auto; display: block; scroll-snap-align: start; }
+.carousel-dots { display: flex; justify-content: center; gap: 5px; padding: 8px 0 2px; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: #ccc; transition: background 0.15s; }
+.dot.active { background: var(--fg); }
 .item-card .card-body { padding: 14px 16px 16px; }
 .item-card .card-num { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 6px; }
 .item-card .card-title { font-size: 16px; font-weight: normal; margin-bottom: 10px; line-height: 1.4; }
@@ -111,11 +120,13 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
   text-align: center; cursor: pointer; position: relative; background: var(--card);
   transition: border-color 0.15s;
 }
-.img-upload-area.has-image { padding: 0; border-style: solid; }
+.img-upload-area.has-image { padding: 8px; border-style: solid; }
 .img-upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
 .img-upload-area .upload-label { font-size: 14px; color: var(--muted); pointer-events: none; }
 .img-upload-area .upload-label span { display: block; font-size: 24px; margin-bottom: 6px; }
-.img-preview { width: 100%; border-radius: 6px; display: block; max-height: 260px; object-fit: cover; }
+.multi-preview { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.multi-preview::-webkit-scrollbar { display: none; }
+.multi-preview img { height: 88px; width: auto; border-radius: 6px; flex-shrink: 0; object-fit: cover; display: block; }
 
 .submit-btn {
   width: 100%; background: var(--fg); color: #fff; border: none;
@@ -254,9 +265,9 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
     <div class="field">
       <label>图片（可选）</label>
       <div class="img-upload-area" id="uploadArea">
-        <input type="file" id="f-image" accept="image/*">
-        <div class="upload-label"><span>📷</span>点击或拍照上传</div>
-        <img class="img-preview" id="imgPreview" style="display:none">
+        <input type="file" id="f-image" accept="image/*" multiple>
+        <div class="upload-label" id="uploadLabel"><span>📷</span>点击或拍照上传，可多选</div>
+        <div class="multi-preview" id="multiPreview"></div>
       </div>
     </div>
     <div class="field">
@@ -447,8 +458,9 @@ function renderGallery(items) {
     el.className = 'view-list';
     el.innerHTML = sorted.map(item => {
       const num = String(item.id).padStart(2, '0');
-      const thumb = item.image
-        ? `<img class="list-thumb" src="${item.image}" loading="lazy">`
+      const firstImg = (item.images && item.images[0]) || item.image || null;
+      const thumb = firstImg
+        ? `<img class="list-thumb" src="${firstImg}" loading="lazy">`
         : `<div class="list-thumb" style="background:#e0deda;border-radius:5px;"></div>`;
       return `<div class="list-item" onclick="jumpToCard(${item.id})">
   ${thumb}
@@ -464,8 +476,9 @@ function renderGallery(items) {
     el.className = 'view-grid';
     const cells = sorted.map(item => {
       const num = String(item.id).padStart(2, '0');
-      const imgHtml = item.image
-        ? `<img class="grid-img" src="${item.image}" loading="lazy">`
+      const firstImg = (item.images && item.images[0]) || item.image || null;
+      const imgHtml = firstImg
+        ? `<img class="grid-img" src="${firstImg}" loading="lazy">`
         : `<div class="grid-no-img"><span>✦</span></div>`;
       return `<div class="grid-item" onclick="jumpToCard(${item.id})">
   ${imgHtml}
@@ -484,16 +497,23 @@ function renderGallery(items) {
   el.className = '';
   el.innerHTML = cardSorted.map(item => {
     const num = String(item.id).padStart(2, '0');
-    const imgHtml = item.image
-      ? `<img class="card-img" src="${item.image}" alt="${escHtml(item.title)}" loading="lazy">`
-      : '';
+    // Normalize: support both old `image` string and new `images` array
+    const imgs = item.images || (item.image ? [item.image] : []);
+    let mediaHtml = '';
+    if (imgs.length === 1) {
+      mediaHtml = `<img class="card-img" src="${imgs[0]}" alt="${escHtml(item.title)}" loading="lazy">`;
+    } else if (imgs.length > 1) {
+      const slides = imgs.map(src => `<img class="carousel-img" src="${src}" loading="lazy">`).join('');
+      const dots = imgs.map((_, i) => `<span class="dot${i === 0 ? ' active' : ''}"></span>`).join('');
+      mediaHtml = `<div class="carousel-wrap"><div class="carousel-track">${slides}</div><div class="carousel-dots">${dots}</div></div>`;
+    }
     const archiveHtml = item.archive
       ? `<div class="card-archive">整理：${escHtml(item.archive)}</div>` : '';
     const linkBtn = item.link
       ? `<button class="card-btn" onclick="copyLink('${escAttr(item.link)}', this)">复制链接</button>` : '';
     return `
 <div class="item-card" id="card-${item.id}">
-  ${imgHtml}
+  ${mediaHtml}
   <div class="card-body">
     <div class="card-num">${num}</div>
     <div class="card-title">${escHtml(item.title)}</div>
@@ -507,6 +527,7 @@ function renderGallery(items) {
   </div>
 </div>`;
   }).join('');
+  setTimeout(initCarousels, 50);
 }
 
 function escHtml(s) {
@@ -584,20 +605,14 @@ function setStatus(s) {
 // ─────────────────────────────────────────────
 // Image handling
 // ─────────────────────────────────────────────
-function compressImage(file) {
+const MAX_TOTAL_B64 = 1398101; // 1MB as base64 chars
+
+function readImageElement(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = e => {
       const img = new Image();
-      img.onload = () => {
-        const MAX = 1200;
-        let w = img.width, h = img.height;
-        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.82));
-      };
+      img.onload = () => resolve(img);
       img.onerror = reject;
       img.src = e.target.result;
     };
@@ -606,22 +621,59 @@ function compressImage(file) {
   });
 }
 
+function renderToJpeg(imgEl, maxChars) {
+  const MAX_W = 1400;
+  let w = imgEl.width, h = imgEl.height;
+  if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+  let q = 0.88, result;
+  do { result = canvas.toDataURL('image/jpeg', q); q -= 0.07; }
+  while (result.length > maxChars && q > 0.2);
+  return result;
+}
+
+async function compressFiles(files) {
+  const perImg = Math.floor(MAX_TOTAL_B64 / files.length);
+  const results = [];
+  for (const f of files) {
+    const imgEl = await readImageElement(f);
+    results.push(renderToJpeg(imgEl, perImg));
+  }
+  return results;
+}
+
+let _pendingImages = []; // compressed data URLs ready for submit
+
 document.getElementById('f-image').addEventListener('change', async function() {
-  const file = this.files[0];
-  if (!file) return;
-  const preview = document.getElementById('imgPreview');
+  const files = [...this.files];
+  if (!files.length) return;
   const area = document.getElementById('uploadArea');
-  const label = area.querySelector('.upload-label');
+  const label = document.getElementById('uploadLabel');
+  const preview = document.getElementById('multiPreview');
+  label.textContent = '压缩中…';
   try {
-    const dataUrl = await compressImage(file);
-    preview.src = dataUrl;
-    preview.style.display = 'block';
+    _pendingImages = await compressFiles(files);
+    preview.innerHTML = _pendingImages.map(src => `<img src="${src}">`).join('');
     label.style.display = 'none';
     area.classList.add('has-image');
   } catch(e) {
     showToast('图片处理失败', 'err');
+    label.textContent = '点击或拍照上传，可多选';
   }
 });
+
+function initCarousels() {
+  document.querySelectorAll('.carousel-track').forEach(track => {
+    const dotsEl = track.nextElementSibling;
+    if (!dotsEl) return;
+    track.addEventListener('scroll', () => {
+      const idx = Math.round(track.scrollLeft / track.offsetWidth);
+      [...dotsEl.children].forEach((d, i) => d.classList.toggle('active', i === idx));
+    }, { passive: true });
+  });
+}
 
 // ─────────────────────────────────────────────
 // Add form submit
@@ -637,15 +689,14 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
   const analysis = document.getElementById('f-analysis').value.trim();
   const archive  = document.getElementById('f-archive').value.trim();
   const link     = document.getElementById('f-link').value.trim();
-  const imgEl    = document.getElementById('imgPreview');
-  const image    = imgEl.style.display !== 'none' ? imgEl.src : null;
+  const images   = _pendingImages.length ? _pendingImages : null;
 
   try {
     const { items, sha } = await loadData();
     const newId = items.length ? Math.max(...items.map(i => i.id)) + 1 : 1;
     items.push({
       id: newId, title, analysis, archive, link,
-      image: image || null,
+      images: images || null,
       createdAt: new Date().toISOString().split('T')[0]
     });
     await saveData(items, sha, `添加灵感：${title}`);
@@ -654,10 +705,11 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
 
     // Reset form
     this.reset();
-    imgEl.style.display = 'none';
-    imgEl.src = '';
+    _pendingImages = [];
+    document.getElementById('multiPreview').innerHTML = '';
     document.getElementById('uploadArea').classList.remove('has-image');
-    document.querySelector('.upload-label').style.display = '';
+    document.getElementById('uploadLabel').style.display = '';
+    document.getElementById('uploadLabel').textContent = '点击或拍照上传，可多选';
 
     showToast('✓ 已添加：' + title, 'ok');
     switchTab('gallery');
