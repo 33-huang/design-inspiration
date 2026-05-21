@@ -676,7 +676,8 @@ async function loadTagsData() {
 }
 
 async function saveTagsData(groups) {
-  const result = await ghPut('tags.json', JSON.stringify({ groups }, null, 2), _tagsSha || null, '更新标签');
+  try { const meta = await ghGet('tags.json'); _tagsSha = meta.sha; } catch(e) { _tagsSha = null; }
+  const result = await ghPut('tags.json', JSON.stringify({ groups }, null, 2), _tagsSha, '更新标签');
   _tagsSha = result.content.sha;
   tagGroups = groups;
 }
@@ -904,7 +905,7 @@ function renderTagCheckboxes(containerId, selectedIds) {
     <div class="tag-check-group">
       <div class="tag-check-group-header">${escHtml(g.name)}</div>
       <div class="tag-check-chips">
-        ${g.tags.map(t => `<button type="button" class="tag-check-chip${sel.has(t.id) ? ' selected' : ''}" onclick="this.classList.toggle('selected')">${escHtml(t.name)}</button>`).join('')}
+        ${g.tags.map(t => `<button type="button" data-tag-id="${t.id}" class="tag-check-chip${sel.has(t.id) ? ' selected' : ''}" onclick="this.classList.toggle('selected')">${escHtml(t.name)}</button>`).join('')}
       </div>
       <div class="tag-inline-add">
         <input type="text" id="${containerId}-newtag-${g.id}" placeholder="添加标签…"
@@ -950,14 +951,9 @@ function addInlineGroup(inputId, containerId) {
 }
 
 function getSelectedTags(containerId) {
-  return [...document.querySelectorAll(`#${containerId} .tag-check-chip.selected`)].map(b => {
-    const name = b.textContent.trim();
-    for (const g of tagGroups) {
-      const t = g.tags.find(t => t.name === name);
-      if (t) return t.id;
-    }
-    return null;
-  }).filter(Boolean);
+  return [...document.querySelectorAll(`#${containerId} .tag-check-chip.selected`)]
+    .map(b => b.dataset.tagId)
+    .filter(Boolean);
 }
 
 function renderAddTagArea(selectedIds) {
