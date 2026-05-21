@@ -88,13 +88,27 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 }
 .item-card .card-analysis.expanded { -webkit-line-clamp: unset; }
 .item-card .card-archive { font-size: 12px; color: var(--muted); margin-top: 10px; }
-.item-card .card-footer { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-.card-btn {
-  background: none; border: 1px solid var(--border); border-radius: 4px;
-  padding: 5px 12px; font-size: 12px; cursor: pointer; color: #555;
-  font-family: inherit; letter-spacing: 0.03em; transition: all 0.15s;
+.card-menu-wrap { display: flex; justify-content: flex-end; margin-top: 12px; position: relative; }
+.card-menu-btn {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 12px; font-size: 18px; cursor: pointer; color: var(--muted);
+  font-family: inherit; line-height: 1; letter-spacing: 2px;
 }
-.card-btn:active { background: var(--fg); color: #fff; border-color: var(--fg); }
+.card-menu-btn:active { background: var(--bg); }
+.card-menu {
+  display: none; position: absolute; bottom: calc(100% + 6px); right: 0;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  overflow: hidden; z-index: 50; min-width: 130px;
+}
+.card-menu.open { display: block; }
+.card-menu-item {
+  display: block; width: 100%; padding: 13px 18px; background: none;
+  border: none; border-bottom: 1px solid var(--border); text-align: left;
+  font-size: 14px; font-family: inherit; cursor: pointer; color: var(--fg);
+}
+.card-menu-item:last-child { border-bottom: none; }
+.card-menu-item:active { background: var(--bg); }
 .expand-btn { color: var(--muted); font-size: 12px; background: none; border: none; cursor: pointer; margin-top: 4px; padding: 0; letter-spacing: 0.03em; }
 
 .empty-state { text-align: center; padding: 80px 32px; color: var(--muted); }
@@ -568,8 +582,8 @@ function renderGallery(items) {
     }
     const archiveHtml = item.archive
       ? `<div class="card-archive">整理：${escHtml(item.archive)}</div>` : '';
-    const linkBtn = item.link
-      ? `<button class="card-btn" onclick="copyLink('${escAttr(item.link)}', this)">复制链接</button>` : '';
+    const linkMenuItem = item.link
+      ? `<button class="card-menu-item" onclick="copyLink('${escAttr(item.link)}', this); closeCardMenu()">复制链接</button>` : '';
     return `
 <div class="item-card" id="card-${item.id}">
   ${mediaHtml}
@@ -579,10 +593,13 @@ function renderGallery(items) {
     <div class="card-analysis" id="ana-${item.id}">${escHtml(item.analysis)}</div>
     <button class="expand-btn" id="exp-${item.id}" onclick="toggleExpand(${item.id})">展开全文</button>
     ${archiveHtml}
-    <div class="card-footer">
-      <button class="card-btn" onclick="copyText('ana-${item.id}', this)">复制分析</button>
-      ${linkBtn}
-      <button class="card-btn" onclick="openEdit(${item.id})">编辑</button>
+    <div class="card-menu-wrap">
+      <button class="card-menu-btn" onclick="event.stopPropagation(); toggleCardMenu(${item.id})">···</button>
+      <div class="card-menu" id="menu-${item.id}">
+        <button class="card-menu-item" onclick="copyText('ana-${item.id}', this); closeCardMenu()">复制分析</button>
+        ${linkMenuItem}
+        <button class="card-menu-item" onclick="openEdit(${item.id}); closeCardMenu()">编辑</button>
+      </div>
     </div>
   </div>
 </div>`;
@@ -793,6 +810,27 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
   }
   btn.disabled = false; btn.textContent = '添加到灵感库';
 });
+
+// ─────────────────────────────────────────────
+// Card menu
+// ─────────────────────────────────────────────
+let _openMenuId = null;
+
+function toggleCardMenu(id) {
+  if (_openMenuId === id) { closeCardMenu(); return; }
+  closeCardMenu();
+  _openMenuId = id;
+  document.getElementById(`menu-${id}`).classList.add('open');
+  setTimeout(() => document.addEventListener('click', closeCardMenu, { once: true }), 0);
+}
+
+function closeCardMenu() {
+  if (_openMenuId !== null) {
+    const el = document.getElementById(`menu-${_openMenuId}`);
+    if (el) el.classList.remove('open');
+    _openMenuId = null;
+  }
+}
 
 // ─────────────────────────────────────────────
 // Edit item
