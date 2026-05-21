@@ -132,10 +132,10 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .item-card .card-img { width: 100%; display: block; height: auto; }
 
 /* ── Carousel ── */
-.carousel-wrap { position: relative; }
-.carousel-track { display: flex; overflow-x: scroll; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.carousel-wrap { position: relative; overflow: hidden; }
+.carousel-track { display: flex; overflow-x: scroll; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; width: 100%; }
 .carousel-track::-webkit-scrollbar { display: none; }
-.carousel-img { flex-shrink: 0; width: 100%; height: auto; display: block; scroll-snap-align: start; }
+.carousel-img { flex: 0 0 100%; width: 100%; height: auto; display: block; scroll-snap-align: start; object-fit: contain; }
 .carousel-num {
   position: absolute; bottom: 10px; right: 10px;
   background: rgba(0,0,0,0.42); color: #fff; font-size: 12px;
