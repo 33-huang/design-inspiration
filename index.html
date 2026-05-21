@@ -231,6 +231,31 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
   cursor: pointer; font-family: inherit; color: var(--fg); transition: all 0.12s;
 }
 .tag-check-chip.selected { background: var(--fg); color: #fff; border-color: var(--fg); }
+.tag-inline-add {
+  display: flex; align-items: center; gap: 6px; padding: 2px 12px 10px;
+}
+.tag-inline-add input {
+  flex: 1; border: none; border-bottom: 1px solid var(--border); background: none;
+  padding: 4px 2px; font-size: 12px; font-family: inherit; color: var(--fg); outline: none;
+}
+.tag-inline-add input::placeholder { color: #bbb; }
+.tag-inline-add button {
+  background: none; border: none; color: var(--muted); font-size: 18px;
+  cursor: pointer; padding: 0 2px; line-height: 1; flex-shrink: 0;
+}
+.tag-inline-new-group {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 12px; border-top: 1px solid var(--border);
+}
+.tag-inline-new-group input {
+  flex: 1; border: none; border-bottom: 1px solid var(--border); background: none;
+  padding: 4px 2px; font-size: 12px; font-family: inherit; color: var(--fg); outline: none;
+}
+.tag-inline-new-group input::placeholder { color: #bbb; }
+.tag-inline-new-group button {
+  background: none; border: none; color: var(--muted); font-size: 12px;
+  cursor: pointer; padding: 0; font-family: inherit; flex-shrink: 0; letter-spacing: 0.02em;
+}
 
 .submit-btn {
   width: 100%; background: var(--fg); color: #fff; border: none;
@@ -868,25 +893,64 @@ document.getElementById('searchInput').addEventListener('input', function() {
 });
 
 // ─────────────────────────────────────────────
-// Tag checkboxes
+// Tag checkboxes (with inline creation)
 // ─────────────────────────────────────────────
+let _tagsDirty = false;
+
 function renderTagCheckboxes(containerId, selectedIds) {
   const el = document.getElementById(containerId);
-  if (!tagGroups.length) { el.innerHTML = ''; return; }
   const sel = new Set(selectedIds || []);
-  el.innerHTML = tagGroups.map(g => `
+  const groupsHtml = tagGroups.map(g => `
     <div class="tag-check-group">
       <div class="tag-check-group-header">${escHtml(g.name)}</div>
       <div class="tag-check-chips">
         ${g.tags.map(t => `<button type="button" class="tag-check-chip${sel.has(t.id) ? ' selected' : ''}" onclick="this.classList.toggle('selected')">${escHtml(t.name)}</button>`).join('')}
       </div>
+      <div class="tag-inline-add">
+        <input type="text" id="${containerId}-newtag-${g.id}" placeholder="添加标签…"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();addInlineTag('${g.id}','${containerId}-newtag-${g.id}','${containerId}')}">
+        <button type="button" onclick="addInlineTag('${g.id}','${containerId}-newtag-${g.id}','${containerId}')">＋</button>
+      </div>
     </div>
   `).join('');
+  el.innerHTML = groupsHtml + `
+    <div class="tag-inline-new-group">
+      <input type="text" id="${containerId}-newgroup" placeholder="新建分组…"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();addInlineGroup('${containerId}-newgroup','${containerId}')}">
+      <button type="button" onclick="addInlineGroup('${containerId}-newgroup','${containerId}')">＋ 新分组</button>
+    </div>`;
+}
+
+function addInlineTag(groupId, inputId, containerId) {
+  const input = document.getElementById(inputId);
+  const name = input.value.trim(); if (!name) return;
+  const group = tagGroups.find(g => g.id === groupId); if (!group) return;
+  if (group.tags.find(t => t.name === name)) { input.value = ''; return; }
+  const newTag = { id: 't' + Date.now(), name };
+  group.tags.push(newTag);
+  _tagsDirty = true;
+  const selected = getSelectedTags(containerId);
+  selected.push(newTag.id);
+  renderTagCheckboxes(containerId, selected);
+  const nextInput = document.getElementById(inputId);
+  if (nextInput) nextInput.focus();
+}
+
+function addInlineGroup(inputId, containerId) {
+  const input = document.getElementById(inputId);
+  const name = input.value.trim(); if (!name) return;
+  if (tagGroups.find(g => g.name === name)) { input.value = ''; return; }
+  const gid = 'g' + Date.now();
+  tagGroups.push({ id: gid, name, tags: [] });
+  _tagsDirty = true;
+  const selected = getSelectedTags(containerId);
+  renderTagCheckboxes(containerId, selected);
+  const tagInput = document.getElementById(`${containerId}-newtag-${gid}`);
+  if (tagInput) tagInput.focus();
 }
 
 function getSelectedTags(containerId) {
   return [...document.querySelectorAll(`#${containerId} .tag-check-chip.selected`)].map(b => {
-    // find tag id by matching name
     const name = b.textContent.trim();
     for (const g of tagGroups) {
       const t = g.tags.find(t => t.name === name);
@@ -897,16 +961,12 @@ function getSelectedTags(containerId) {
 }
 
 function renderAddTagArea(selectedIds) {
-  const field = document.getElementById('addTagField');
-  if (!tagGroups.length) { field.style.display = 'none'; return; }
-  field.style.display = '';
+  document.getElementById('addTagField').style.display = '';
   renderTagCheckboxes('addTagArea', selectedIds);
 }
 
 function renderEditTagArea(selectedIds) {
-  const field = document.getElementById('editTagField');
-  if (!tagGroups.length) { field.style.display = 'none'; return; }
-  field.style.display = '';
+  document.getElementById('editTagField').style.display = '';
   renderTagCheckboxes('editTagArea', selectedIds);
 }
 
@@ -1185,6 +1245,11 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
       }
     }
     btn.textContent = '保存中…';
+    if (_tagsDirty) {
+      await saveTagsData(tagGroups);
+      cacheTagGroups(tagGroups);
+      _tagsDirty = false;
+    }
     const { items, sha } = await loadData();
     const newId = items.length ? Math.max(...items.map(i => i.id)) + 1 : 1;
     items.push({ id: newId, title, analysis, archive, link, tags, images: uploadedPaths.length ? uploadedPaths : null, createdAt: new Date().toISOString().split('T')[0] });
@@ -1247,6 +1312,11 @@ async function saveEditItem() {
   const btn = document.getElementById('editSaveBtn');
   btn.textContent = '保存中…'; btn.disabled = true;
   try {
+    if (_tagsDirty) {
+      await saveTagsData(tagGroups);
+      cacheTagGroups(tagGroups);
+      _tagsDirty = false;
+    }
     const { items, sha } = await loadData();
     const item = items.find(i => i.id === id);
     if (!item) throw new Error('找不到该条目');
