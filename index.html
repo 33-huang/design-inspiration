@@ -441,6 +441,14 @@ async function loadItems() {
     document.getElementById('gallery').innerHTML =
       `<div class="empty-state"><p>请先点击右上角齿轮<br>配置 GitHub 信息</p></div>`;
     setStatus('err');
+    // If hash config was provided but localStorage failed, auto-open modal prefilled
+    if (_hashCfg) {
+      document.getElementById('s-token').value  = _hashCfg.t || '';
+      document.getElementById('s-owner').value  = _hashCfg.o || '';
+      document.getElementById('s-repo').value   = _hashCfg.r || '';
+      document.getElementById('s-branch').value = _hashCfg.b || 'main';
+      document.getElementById('settingsOverlay').classList.add('open');
+    }
     return;
   }
 
@@ -578,15 +586,23 @@ function showToast(msg, type = 'ok') {
 // ─────────────────────────────────────────────
 // Auto-config via URL hash: #t=TOKEN&o=OWNER&r=REPO&b=BRANCH
 // ─────────────────────────────────────────────
+let _hashCfg = null;
 (function() {
-  const hash = location.hash.slice(1);
-  if (!hash) return;
-  const p = Object.fromEntries(hash.split('&').map(s => s.split('=')));
-  if (p.t) localStorage.setItem('gh_token',  decodeURIComponent(p.t));
-  if (p.o) localStorage.setItem('gh_owner',  decodeURIComponent(p.o));
-  if (p.r) localStorage.setItem('gh_repo',   decodeURIComponent(p.r));
-  if (p.b) localStorage.setItem('gh_branch', decodeURIComponent(p.b));
-  if (p.t || p.o || p.r) history.replaceState(null, '', location.pathname);
+  try {
+    const hash = location.hash.slice(1);
+    if (!hash) return;
+    const p = new URLSearchParams(hash);
+    const t = p.get('t'), o = p.get('o'), r = p.get('r'), b = p.get('b') || 'main';
+    if (!t) return;
+    _hashCfg = { t, o, r, b };
+    try {
+      localStorage.setItem('gh_token', t);
+      localStorage.setItem('gh_owner', o);
+      localStorage.setItem('gh_repo', r);
+      localStorage.setItem('gh_branch', b);
+    } catch(e) {}
+    history.replaceState(null, '', location.pathname);
+  } catch(e) {}
 })();
 
 // ─────────────────────────────────────────────
