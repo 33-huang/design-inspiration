@@ -436,9 +436,15 @@ async function ghPut(path, content, sha, message) {
 }
 
 async function loadData() {
-  const file = await ghGet('data.json');
-  const raw = decodeURIComponent(escape(atob(file.content.replace(/\s/g, ''))));
-  return { items: JSON.parse(raw), sha: file.sha };
+  const { token, owner, repo, branch } = getSettings();
+  // Use raw URL to bypass GitHub's 1MB content API limit
+  const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data.json?t=${Date.now()}`;
+  const rawRes = await fetch(rawUrl, { headers: { Authorization: `token ${token}` } });
+  if (!rawRes.ok) throw new Error(`读取失败 ${rawRes.status}`);
+  const items = await rawRes.json();
+  // Get SHA separately (contents API always returns sha even for large files)
+  const meta = await ghGet('data.json');
+  return { items, sha: meta.sha };
 }
 
 async function saveData(items, sha, message) {
