@@ -415,6 +415,8 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .tag-mgmt-new-group-row input:focus { outline: none; border-color: #999; }
 .tag-mgmt-new-group-row button { background: var(--fg); color: #fff; border: none; border-radius: 6px; padding: 9px 16px; font-size: 14px; font-family: inherit; cursor: pointer; }
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 </head>
 <body>
 
@@ -610,6 +612,15 @@ function hasSettings() {
 // ─────────────────────────────────────────────
 // GitHub API
 // ─────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey: 'AIzaSyAg89DOubYTlURNbdXH4-cXmfHY5OlOpY0',
+  projectId: 'design-inspiration-43122',
+  storageBucket: 'design-inspiration-43122.firebasestorage.app',
+  appId: '1:781942393973:web:685c6de87c9c5f1092fc3c'
+});
+const fbStorage = firebase.storage();
+
+// ─────────────────────────────────────────────
 const API = 'https://api.github.com';
 
 async function ghGet(path) {
@@ -649,6 +660,9 @@ async function ghPutBinary(path, base64Data, message) {
 
 function resolveImg(src) {
   if (!src) return null;
+  if (typeof src === 'object' && src.provider === 'firebase') {
+    return `https://firebasestorage.googleapis.com/v0/b/design-inspiration-43122.firebasestorage.app/o/${encodeURIComponent(src.path)}?alt=media`;
+  }
   if (src.startsWith('data:') || src.startsWith('http')) return src;
   const { owner, repo } = getSettings();
   return `https://raw.githubusercontent.com/${owner}/${repo}/main/${src}`;
@@ -1215,10 +1229,31 @@ function renderToJpeg(imgEl, maxChars) {
   return result;
 }
 
+function compressToBlob(imgEl) {
+  const MAX_W = 1600;
+  let w = imgEl.width, h = imgEl.height;
+  if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+  let q = 0.85, dataUrl;
+  do { dataUrl = canvas.toDataURL('image/jpeg', q); q -= 0.07; } while (dataUrl.length > 1400000 && q > 0.2);
+  const bytes = atob(dataUrl.split(',')[1]);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  return { blob: new Blob([arr], { type: 'image/jpeg' }), dataUrl };
+}
+
 async function compressFiles(files) {
   const perImg = Math.floor(MAX_TOTAL_B64 / files.length);
   const results = [];
   for (const f of files) { const imgEl = await readImageElement(f); results.push(renderToJpeg(imgEl, perImg)); }
+  return results;
+}
+
+async function compressFilesForFirebase(files) {
+  const results = [];
+  for (const f of files) { const imgEl = await readImageElement(f); results.push(compressToBlob(imgEl)); }
   return results;
 }
 
@@ -1229,8 +1264,8 @@ document.getElementById('f-image').addEventListener('change', async function() {
   const label = document.getElementById('uploadLabel');
   label.textContent = '压缩中…';
   try {
-    _pendingImages = await compressFiles(files);
-    document.getElementById('multiPreview').innerHTML = _pendingImages.map(src => `<img src="${src}">`).join('');
+    _pendingImages = await compressFilesForFirebase(files);
+    document.getElementById('multiPreview').innerHTML = _pendingImages.map(r => `<img src="${r.dataUrl}">`).join('');
     label.style.display = 'none';
     document.getElementById('uploadArea').classList.add('has-image');
   } catch(e) {
@@ -1268,8 +1303,9 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
       const ts = Date.now();
       for (let i = 0; i < _pendingImages.length; i++) {
         btn.textContent = `上传图片 ${i+1}/${_pendingImages.length}…`;
-        await ghPutBinary(`images/${ts}_${i}.jpg`, _pendingImages[i].split(',')[1], `添加图片`);
-        uploadedPaths.push(`images/${ts}_${i}.jpg`);
+        const path = `images/${ts}_${i}.jpg`;
+        await fbStorage.ref(path).put(_pendingImages[i].blob, { contentType: 'image/jpeg' });
+        uploadedPaths.push({ provider: 'firebase', path });
       }
     }
     btn.textContent = '保存中…';
