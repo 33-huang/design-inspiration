@@ -79,4 +79,17 @@ Codex 负责完成以下步骤：
 
 ## 部署
 
-GitHub Pages 自动部署（push 到 main 即触发），无需手动操作。
+**线上地址**：https://33-huang.github.io/design-inspiration/  
+**方式**：GitHub Pages，source 为 main 分支根目录
+
+每次改完代码后，push 到 main 即自动触发部署，通常 1 分钟内生效：
+
+```bash
+cd /Users/dear33/33/design-inspiration
+
+git add index.html          # 或其他改动的文件
+git commit -m "描述改动内容"
+git push origin main
+```
+
+无需 wrangler，无需手动触发，push 完刷新线上地址即可验证。
