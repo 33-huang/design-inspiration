@@ -404,12 +404,12 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .tag-mgmt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .tag-mgmt-chip { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 12px; border: 1px solid var(--border); background: var(--bg); }
 .tag-mgmt-chip-del { background: none; border: none; color: #aaa; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
-.tag-mgmt-chip-name { cursor: pointer; }
+.tag-mgmt-chip-name { cursor: pointer; background: none; border: none; padding: 0; font-family: inherit; font-size: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
 .tag-mgmt-chip-name:active { opacity: 0.6; }
 .tag-mgmt-chip.renaming { padding: 0; gap: 6px; border-color: #aaa; }
+.tag-mgmt-group-name { cursor: pointer; font-size: 13px; font-weight: normal; background: none; border: none; padding: 0; font-family: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
 .tag-mgmt-rename-input { font-size: 13px; border: 1.5px solid #aaa; border-radius: 20px; padding: 4px 10px; outline: none; font-family: inherit; width: 100px; -webkit-appearance: none; appearance: none; background: var(--bg); color: var(--fg); }
 .tag-mgmt-confirm-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--fg); color: var(--bg); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.tag-mgmt-group-name { cursor: pointer; font-size: 13px; font-weight: normal; }
 .tag-mgmt-group-name:active { opacity: 0.6; }
 .tag-mgmt-hint { font-size: 11px; color: var(--sub); margin-bottom: 16px; }
 .tag-mgmt-add-tag { display: flex; gap: 6px; margin-top: 4px; }
@@ -871,11 +871,11 @@ function renderTagMgmtContent() {
     _editingGroups.map((g, gi) => `
     <div class="tag-mgmt-group">
       <div class="tag-mgmt-group-header">
-        <span class="tag-mgmt-group-name" id="grp-name-${gi}" onclick="startGroupRename(${gi})">${escHtml(g.name)}</span>
+        <button type="button" class="tag-mgmt-group-name" id="grp-name-${gi}" onclick="startGroupRename(${gi})">${escHtml(g.name)}</button>
         <button class="tag-mgmt-del-btn" onclick="deleteTagGroup(${gi})">删除分组</button>
       </div>
       <div class="tag-mgmt-chips">
-        ${g.tags.map((t, ti) => `<span class="tag-mgmt-chip" id="chip-${gi}-${ti}"><span class="tag-mgmt-chip-name" onclick="startTagRename(${gi},${ti})">${escHtml(t.name)}</span><button class="tag-mgmt-chip-del" onclick="deleteTag(${gi},${ti})">×</button></span>`).join('')}
+        ${g.tags.map((t, ti) => `<span class="tag-mgmt-chip" id="chip-${gi}-${ti}"><button type="button" class="tag-mgmt-chip-name" onclick="startTagRename(${gi},${ti})">${escHtml(t.name)}</button><button class="tag-mgmt-chip-del" onclick="deleteTag(${gi},${ti})">×</button></span>`).join('')}
       </div>
       <div class="tag-mgmt-add-tag">
         <input type="text" id="newtag-${gi}" placeholder="新标签名">
