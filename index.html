@@ -631,6 +631,9 @@ const fbStorage = firebase.storage();
 
 // ─────────────────────────────────────────────
 const API = 'https://api.github.com';
+const REPO_OWNER = '33-huang';
+const REPO_NAME = 'design-inspiration';
+const REPO_BRANCH = 'main';
 
 function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
   const ctrl = new AbortController();
@@ -640,20 +643,24 @@ function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
 }
 
 async function ghGet(path) {
-  const { token, owner, repo, branch } = getSettings();
-  const res = await fetchWithTimeout(`${API}/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${Date.now()}`, {
-    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-  });
+  const { token } = getSettings();
+  const headers = { Accept: 'application/vnd.github.v3+json' };
+  if (token) headers.Authorization = `token ${token}`;
+  const res = await fetchWithTimeout(
+    `${API}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}?ref=${REPO_BRANCH}&t=${Date.now()}`,
+    { headers }
+  );
   if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`);
   return res.json();
 }
 
 async function ghPut(path, content, sha, message) {
-  const { token, owner, repo, branch } = getSettings();
+  const { token } = getSettings();
+  if (!token) throw new Error('请先配置 GitHub Token');
   const encoded = btoa(unescape(encodeURIComponent(content)));
-  const body = { message, content: encoded, branch };
+  const body = { message, content: encoded, branch: REPO_BRANCH };
   if (sha) body.sha = sha;
-  const res = await fetchWithTimeout(`${API}/repos/${owner}/${repo}/contents/${path}`, {
+  const res = await fetchWithTimeout(`${API}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
     method: 'PUT',
     headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
@@ -663,9 +670,10 @@ async function ghPut(path, content, sha, message) {
 }
 
 async function ghPutBinary(path, base64Data, message) {
-  const { token, owner, repo, branch } = getSettings();
-  const body = { message, content: base64Data, branch };
-  const res = await fetchWithTimeout(`${API}/repos/${owner}/${repo}/contents/${path}`, {
+  const { token } = getSettings();
+  if (!token) throw new Error('请先配置 GitHub Token');
+  const body = { message, content: base64Data, branch: REPO_BRANCH };
+  const res = await fetchWithTimeout(`${API}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
     method: 'PUT',
     headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
@@ -680,8 +688,7 @@ function resolveImg(src) {
     return `https://firebasestorage.googleapis.com/v0/b/design-inspiration-43122.firebasestorage.app/o/${encodeURIComponent(src.path)}?alt=media`;
   }
   if (src.startsWith('data:') || src.startsWith('http')) return src;
-  const { owner, repo } = getSettings();
-  return `https://raw.githubusercontent.com/${owner}/${repo}/main/${src}`;
+  return `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${src}`;
 }
 
 function decodeGitHubJson(b64) {
@@ -1189,12 +1196,6 @@ async function loadItems() {
   const cachedTags = getCachedTagGroups();
   if (cachedTags) tagGroups = cachedTags;
   if (cached) renderGallery(cached);
-
-  if (!hasSettings()) {
-    document.getElementById('gallery').innerHTML =
-      `<div class="empty-state"><p>配置未找到<br><small>请联系管理员重新配置</small></p></div>`;
-    return;
-  }
 
   try {
     const [dataResult] = await Promise.all([loadData(), loadTagsData()]);
