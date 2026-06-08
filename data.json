@@ -90,7 +90,12 @@
       "t1780885449317",
       "t1780885456762"
     ],
-    "images": null,
+    "images": [
+      {
+        "provider": "firebase",
+        "path": "images/1780885842215_0.jpg"
+      }
+    ],
     "createdAt": "2026-06-08"
   }
 ]
