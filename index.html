@@ -407,6 +407,8 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .tag-mgmt-chip-name { cursor: pointer; background: none; border: none; padding: 0; font-family: inherit; font-size: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
 .tag-mgmt-chip-name:active { opacity: 0.6; }
 .tag-mgmt-chip.renaming { padding: 0; gap: 6px; border-color: #aaa; }
+.tag-mgmt-chip.sortable-ghost { opacity: 0.35; }
+.tag-mgmt-chip.sortable-drag { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 .tag-mgmt-group-name { cursor: pointer; font-size: 13px; font-weight: normal; background: none; border: none; padding: 0; font-family: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
 .tag-mgmt-rename-input { font-size: 13px; border: 1.5px solid #aaa; border-radius: 20px; padding: 4px 10px; outline: none; font-family: inherit; width: 100px; -webkit-appearance: none; appearance: none; background: var(--bg); color: var(--fg); }
 .tag-mgmt-confirm-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--fg); color: var(--bg); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -424,6 +426,7 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 </head>
 <body>
 
@@ -869,7 +872,7 @@ function renderTagMgmtContent() {
   const el = document.getElementById('tagMgmtContent');
   el.innerHTML = `<p class="tag-mgmt-hint">轻触标签名可改名，轻触组名可改组名</p>` +
     _editingGroups.map((g, gi) => `
-    <div class="tag-mgmt-group">
+    <div class="tag-mgmt-group" data-gi="${gi}">
       <div class="tag-mgmt-group-header">
         <button type="button" class="tag-mgmt-group-name" id="grp-name-${gi}" onclick="startGroupRename(${gi})">${escHtml(g.name)}</button>
         <button class="tag-mgmt-del-btn" onclick="deleteTagGroup(${gi})">删除分组</button>
@@ -883,6 +886,26 @@ function renderTagMgmtContent() {
       </div>
     </div>
   `).join('');
+  initTagSortable();
+}
+
+let _sortableInstances = [];
+function initTagSortable() {
+  _sortableInstances.forEach(s => s.destroy());
+  _sortableInstances = [];
+  if (typeof Sortable === 'undefined') return;
+  document.querySelectorAll('#tagMgmtContent .tag-mgmt-chips').forEach(el => {
+    const gi = parseInt(el.closest('[data-gi]').dataset.gi);
+    _sortableInstances.push(Sortable.create(el, {
+      animation: 150,
+      filter: '.tag-mgmt-chip-del, .tag-mgmt-confirm-btn, .tag-mgmt-rename-input',
+      preventOnFilter: false,
+      onEnd(evt) {
+        const moved = _editingGroups[gi].tags.splice(evt.oldIndex, 1)[0];
+        _editingGroups[gi].tags.splice(evt.newIndex, 0, moved);
+      }
+    }));
+  });
 }
 
 function startTagRename(gi, ti) {
