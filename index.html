@@ -1342,7 +1342,14 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
     renderAddTagArea([]);
     showToast('✓ 已添加：' + title, 'ok');
     switchTab('gallery');
-  } catch(e) { showToast('添加失败：' + e.message, 'err'); console.error(e); }
+  } catch(e) {
+    showToast('添加失败：' + e.message, 'err'); console.error(e);
+    _pendingImages = [];
+    document.getElementById('multiPreview').innerHTML = '';
+    document.getElementById('uploadArea').classList.remove('has-image');
+    document.getElementById('uploadLabel').style.display = '';
+    document.getElementById('uploadLabel').textContent = '点击或拍照上传，可多选';
+  }
   btn.disabled = false; btn.textContent = '添加到灵感库';
 });
 
