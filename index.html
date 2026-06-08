@@ -400,11 +400,17 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 /* ── Tag management ── */
 .tag-mgmt-group { margin-bottom: 20px; }
 .tag-mgmt-group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.tag-mgmt-group-name { font-size: 13px; font-weight: normal; }
 .tag-mgmt-del-btn { background: none; border: none; color: #c0392b; font-size: 13px; cursor: pointer; padding: 2px 6px; font-family: inherit; }
 .tag-mgmt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .tag-mgmt-chip { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 12px; border: 1px solid var(--border); background: var(--bg); }
 .tag-mgmt-chip-del { background: none; border: none; color: #aaa; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
+.tag-mgmt-chip-name { cursor: pointer; }
+.tag-mgmt-chip-name:active { opacity: 0.6; }
+.tag-mgmt-rename-input { font-size: 12px; border: 1.5px solid #aaa; border-radius: 20px; padding: 2px 8px; outline: none; font-family: inherit; width: 80px; -webkit-appearance: none; appearance: none; background: var(--bg); color: var(--fg); }
+.tag-mgmt-confirm-btn { background: none; border: none; color: #555; font-size: 14px; cursor: pointer; padding: 0 2px; line-height: 1; font-family: inherit; }
+.tag-mgmt-group-name { cursor: pointer; font-size: 13px; font-weight: normal; }
+.tag-mgmt-group-name:active { opacity: 0.6; }
+.tag-mgmt-hint { font-size: 11px; color: var(--sub); margin-bottom: 16px; }
 .tag-mgmt-add-tag { display: flex; gap: 6px; margin-top: 4px; }
 .tag-mgmt-add-tag input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 13px; font-family: inherit; background: var(--card); color: var(--fg); -webkit-appearance: none; }
 .tag-mgmt-add-tag input:focus { outline: none; border-color: #999; }
@@ -860,14 +866,15 @@ document.getElementById('tagMgmtOverlay').addEventListener('click', e => {
 
 function renderTagMgmtContent() {
   const el = document.getElementById('tagMgmtContent');
-  el.innerHTML = _editingGroups.map((g, gi) => `
+  el.innerHTML = `<p class="tag-mgmt-hint">轻触标签名可改名，轻触组名可改组名</p>` +
+    _editingGroups.map((g, gi) => `
     <div class="tag-mgmt-group">
       <div class="tag-mgmt-group-header">
-        <span class="tag-mgmt-group-name">${escHtml(g.name)}</span>
+        <span class="tag-mgmt-group-name" id="grp-name-${gi}" onclick="startGroupRename(${gi})">${escHtml(g.name)}</span>
         <button class="tag-mgmt-del-btn" onclick="deleteTagGroup(${gi})">删除分组</button>
       </div>
       <div class="tag-mgmt-chips">
-        ${g.tags.map((t, ti) => `<span class="tag-mgmt-chip">${escHtml(t.name)}<button class="tag-mgmt-chip-del" onclick="deleteTag(${gi},${ti})">×</button></span>`).join('')}
+        ${g.tags.map((t, ti) => `<span class="tag-mgmt-chip" id="chip-${gi}-${ti}"><span class="tag-mgmt-chip-name" onclick="startTagRename(${gi},${ti})">${escHtml(t.name)}</span><button class="tag-mgmt-chip-del" onclick="deleteTag(${gi},${ti})">×</button></span>`).join('')}
       </div>
       <div class="tag-mgmt-add-tag">
         <input type="text" id="newtag-${gi}" placeholder="新标签名">
@@ -875,6 +882,63 @@ function renderTagMgmtContent() {
       </div>
     </div>
   `).join('');
+}
+
+function startTagRename(gi, ti) {
+  const chip = document.getElementById(`chip-${gi}-${ti}`);
+  if (!chip) return;
+  const oldName = _editingGroups[gi].tags[ti].name;
+  const inp = document.createElement('input');
+  inp.className = 'tag-mgmt-rename-input';
+  inp.value = oldName;
+  const btn = document.createElement('button');
+  btn.className = 'tag-mgmt-confirm-btn';
+  btn.type = 'button';
+  btn.textContent = '✓';
+  chip.innerHTML = '';
+  chip.appendChild(inp);
+  chip.appendChild(btn);
+  inp.focus(); inp.select();
+  let done = false;
+  const confirm = () => {
+    if (done) return; done = true;
+    const newName = inp.value.trim();
+    if (!newName || newName === oldName) { renderTagMgmtContent(); return; }
+    _editingGroups[gi].tags[ti].name = newName;
+    renderTagMgmtContent();
+  };
+  btn.onmousedown = e => e.preventDefault();
+  btn.onclick = e => { e.stopPropagation(); confirm(); };
+  inp.onclick = e => e.stopPropagation();
+  inp.onkeydown = e => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') renderTagMgmtContent(); };
+  inp.onblur = confirm;
+}
+
+function startGroupRename(gi) {
+  const el = document.getElementById(`grp-name-${gi}`);
+  if (!el) return;
+  const orig = _editingGroups[gi].name;
+  el.contentEditable = 'true';
+  el.focus();
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  let done = false;
+  const confirm = () => {
+    if (done) return; done = true;
+    el.contentEditable = 'false';
+    const newName = el.textContent.trim();
+    if (!newName) { el.textContent = orig; return; }
+    _editingGroups[gi].name = newName;
+    el.textContent = newName;
+  };
+  el.onblur = confirm;
+  el.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); confirm(); }
+    if (e.key === 'Escape') { done = true; el.contentEditable = 'false'; el.textContent = orig; }
+  };
 }
 
 function addTagGroup() {
