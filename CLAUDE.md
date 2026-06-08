@@ -18,6 +18,7 @@
 | `data.json` | 条目数据 |
 | `tags.json` | 标签配置 |
 | `images/` | 旧图片文件夹（15 张历史图片，存在 GitHub 仓库，向后兼容保留） |
+| `BUG-LOG.md` | 历史 bug 记录，排查问题先看这里 |
 
 ---
 
@@ -42,7 +43,7 @@
 
 - `images` 是数组，每条可以有多张图片
 - 新图片存 `{ "provider": "firebase", "path": "images/..." }` 对象格式
-- 旧图片（历史数据）存相对路径字符串如 `"images/1_0.jpg"`，`resolveImg()` 自动识别，向后兼容
+- 旧图片（历史数据 id=1-5）存相对路径字符串如 `"images/1_0.jpg"`，`resolveImg()` 自动识别，向后兼容
 
 ### tags.json
 
@@ -59,7 +60,10 @@
 - 上传：客户端直接上传（Firebase compat SDK via CDN）
 - 访问：公开 URL 格式：`https://firebasestorage.googleapis.com/v0/b/design-inspiration-43122.firebasestorage.app/o/{encoded_path}?alt=media`
 - 压缩：上传前用 canvas 压缩，最大宽 1600px，JPEG quality 0.85→0.6，目标 <1MB
-- 展示：`resolveImg()` 函数根据 provider 构造 URL，同时兼容旧的 raw.githubusercontent.com 路径
+- 展示：`resolveImg()` 函数根据 provider 构造 URL，同时兼容旧的相对路径
+
+**⚠️ 重要：Firebase = Google 服务，中国大陆无 VPN 不可访问。**  
+新图片（Firebase 格式）只在开 VPN 的网络下显示。旧图片（相对路径格式，存在 GitHub 仓库）在国内正常显示。如需迁移，参见 BUG-LOG.md BUG-003。
 
 **注意**：Firebase Storage 现在是 test mode（30 天到期，约 2026 年 7 月初），到期前需要更新规则：
 ```
@@ -108,6 +112,36 @@ git push origin main
 - Firebase API Key：硬编码在 index.html（公开仓库可接受，Storage 规则控制写权限）
 
 完整账号信息见 `/Users/dear33/33/web-app-方案选择指南.md`。
+
+---
+
+## 注意事项
+
+### 读数据必须用 GitHub API，不能用 raw CDN
+
+`loadData()`、`loadTagsData()`、`getWriteBase()` 全部使用 `ghGet()`（GitHub API），**不能改回 `raw.githubusercontent.com`**。
+
+原因：`raw.githubusercontent.com` 有 CDN 缓存，延迟可达数分钟。`getWriteBase()` 是"先读后写"操作——读到旧数据再写入，会用旧数据覆盖掉正确内容，导致刚保存的图片刷新后消失。GitHub API 永远返回最新版本。
+
+### 两种图片格式，resolveImg() 同时兼容
+
+```js
+// 旧格式（id=1-5，存在 GitHub 仓库）
+"images/1_0.jpg"  →  raw.githubusercontent.com/33-huang/design-inspiration/main/images/1_0.jpg
+
+// 新格式（id=6+，存在 Firebase）
+{ "provider": "firebase", "path": "images/xxx.jpg" }  →  firebasestorage.googleapis.com/...
+```
+
+`resolveImg()` 靠 `typeof src === 'object'` 区分两种格式。不要"简化"这个函数，会破坏旧图片的显示。
+
+### 读操作不需要 token（公开仓库）
+
+`ghGet()` 在没有 token 时会省略 Authorization header，公开仓库匿名读没有问题（60次/小时限制）。`loadItems()` 不设 `hasSettings()` 门槛，所有人不配置也能浏览。只有写操作（`ghPut`、`ghPutBinary`）要求 token。
+
+### owner/repo 是常量，不从 localStorage 读
+
+`REPO_OWNER = '33-huang'`、`REPO_NAME = 'design-inspiration'`、`REPO_BRANCH = 'main'` 硬编码在 index.html 顶部。settings 里的 owner/repo 字段现在只用于写操作的 token 配置页，读操作一律用这三个常量。
 
 ---
 
