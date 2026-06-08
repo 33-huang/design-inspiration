@@ -406,8 +406,9 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .tag-mgmt-chip-del { background: none; border: none; color: #aaa; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
 .tag-mgmt-chip-name { cursor: pointer; }
 .tag-mgmt-chip-name:active { opacity: 0.6; }
-.tag-mgmt-rename-input { font-size: 12px; border: 1.5px solid #aaa; border-radius: 20px; padding: 2px 8px; outline: none; font-family: inherit; width: 80px; -webkit-appearance: none; appearance: none; background: var(--bg); color: var(--fg); }
-.tag-mgmt-confirm-btn { background: none; border: none; color: #555; font-size: 14px; cursor: pointer; padding: 0 2px; line-height: 1; font-family: inherit; }
+.tag-mgmt-chip.renaming { padding: 0; gap: 6px; border-color: #aaa; }
+.tag-mgmt-rename-input { font-size: 13px; border: 1.5px solid #aaa; border-radius: 20px; padding: 4px 10px; outline: none; font-family: inherit; width: 100px; -webkit-appearance: none; appearance: none; background: var(--bg); color: var(--fg); }
+.tag-mgmt-confirm-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--fg); color: var(--bg); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .tag-mgmt-group-name { cursor: pointer; font-size: 13px; font-weight: normal; }
 .tag-mgmt-group-name:active { opacity: 0.6; }
 .tag-mgmt-hint { font-size: 11px; color: var(--sub); margin-bottom: 16px; }
@@ -896,6 +897,7 @@ function startTagRename(gi, ti) {
   btn.type = 'button';
   btn.textContent = '✓';
   chip.innerHTML = '';
+  chip.classList.add('renaming');
   chip.appendChild(inp);
   chip.appendChild(btn);
   inp.focus(); inp.select();
