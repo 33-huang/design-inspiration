@@ -498,6 +498,15 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
       <textarea id="edit-analysis"></textarea>
     </div>
     <div class="modal-field">
+      <label>图片</label>
+      <div id="editCurrentImgs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"></div>
+      <div class="img-upload-area" id="editUploadArea">
+        <input type="file" id="edit-image" accept="image/*" multiple>
+        <div class="upload-label" id="editUploadLabel"><span>📷</span>上传新图片（将替换现有图片）</div>
+        <div class="multi-preview" id="editMultiPreview"></div>
+      </div>
+    </div>
+    <div class="modal-field">
       <label>参考链接 / 小红书分享文字</label>
       <input type="text" id="edit-link">
     </div>
@@ -1372,6 +1381,8 @@ function closeCardMenu() {
 // ─────────────────────────────────────────────
 // Edit item
 // ─────────────────────────────────────────────
+let _editPendingImages = [];
+
 function openEdit(id) {
   const cached = getCachedItems();
   const item = cached && cached.find(i => i.id === id);
@@ -1380,6 +1391,15 @@ function openEdit(id) {
   document.getElementById('edit-title').value = item.title || '';
   document.getElementById('edit-analysis').value = item.analysis || '';
   document.getElementById('edit-link').value = item.link || '';
+  // 显示现有图片
+  const imgs = (item.images || (item.image ? [item.image] : [])).map(resolveImg).filter(Boolean);
+  const currentEl = document.getElementById('editCurrentImgs');
+  currentEl.innerHTML = imgs.map(src => `<img src="${src}" style="height:72px;width:auto;border-radius:6px;object-fit:cover;">`).join('');
+  // 重置上传区
+  _editPendingImages = [];
+  document.getElementById('editMultiPreview').innerHTML = '';
+  document.getElementById('editUploadArea').classList.remove('has-image');
+  document.getElementById('editUploadLabel').style.display = '';
   renderEditTagArea(item.tags || []);
   document.getElementById('editOverlay').classList.add('open');
 }
@@ -1395,6 +1415,22 @@ async function saveEditItem() {
   const btn = document.getElementById('editSaveBtn');
   btn.textContent = '保存中…'; btn.disabled = true;
   try {
+    let newImages = null;
+    if (_editPendingImages.length) {
+      const ts = Date.now();
+      newImages = [];
+      for (let i = 0; i < _editPendingImages.length; i++) {
+        btn.textContent = `上传图片 ${i+1}/${_editPendingImages.length}…`;
+        const path = `images/${ts}_${i}.jpg`;
+        const uploadTask = fbStorage.ref(path).put(_editPendingImages[i].blob, { contentType: 'image/jpeg' });
+        await Promise.race([
+          uploadTask,
+          new Promise((_, rej) => setTimeout(() => { uploadTask.cancel(); rej(new Error('图片上传超时')); }, 60000))
+        ]);
+        newImages.push({ provider: 'firebase', path });
+      }
+    }
+    btn.textContent = '保存中…';
     if (_tagsDirty) {
       await saveTagsData(tagGroups);
       cacheTagGroups(tagGroups);
@@ -1403,13 +1439,31 @@ async function saveEditItem() {
     const { items, sha } = await getWriteBase();
     const item = items.find(i => i.id === id);
     if (!item) throw new Error('找不到该条目');
-    Object.assign(item, { title, analysis, link, tags });
+    const update = { title, analysis, link, tags };
+    if (newImages) update.images = newImages;
+    Object.assign(item, update);
     await saveData(items, sha, `编辑灵感：${title}`);
     cacheItems(items); renderGallery(items);
     closeEdit(); showToast('已保存', 'ok');
   } catch(e) { showToast('保存失败：' + e.message, 'err'); }
   btn.textContent = '保存'; btn.disabled = false;
 }
+
+document.getElementById('edit-image').addEventListener('change', async function() {
+  const files = [...this.files]; if (!files.length) return;
+  const label = document.getElementById('editUploadLabel');
+  label.textContent = '压缩中…';
+  try {
+    _editPendingImages = await compressFilesForFirebase(files);
+    document.getElementById('editMultiPreview').innerHTML = _editPendingImages.map(r => `<img src="${r.dataUrl}">`).join('');
+    label.style.display = 'none';
+    document.getElementById('editUploadArea').classList.add('has-image');
+    document.getElementById('editCurrentImgs').innerHTML = '';
+  } catch(e) {
+    showToast('图片处理失败', 'err');
+    label.textContent = '上传新图片（将替换现有图片）';
+  }
+});
 
 document.getElementById('editOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('editOverlay')) closeEdit();
