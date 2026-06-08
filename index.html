@@ -623,9 +623,16 @@ const fbStorage = firebase.storage();
 // ─────────────────────────────────────────────
 const API = 'https://api.github.com';
 
+function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: ctrl.signal }).finally(() => clearTimeout(id))
+    .catch(e => { if (e.name === 'AbortError') throw new Error('请求超时，请检查网络后重试'); throw e; });
+}
+
 async function ghGet(path) {
   const { token, owner, repo, branch } = getSettings();
-  const res = await fetch(`${API}/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${Date.now()}`, {
+  const res = await fetchWithTimeout(`${API}/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${Date.now()}`, {
     headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
   });
   if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`);
@@ -637,11 +644,11 @@ async function ghPut(path, content, sha, message) {
   const encoded = btoa(unescape(encodeURIComponent(content)));
   const body = { message, content: encoded, branch };
   if (sha) body.sha = sha;
-  const res = await fetch(`${API}/repos/${owner}/${repo}/contents/${path}`, {
+  const res = await fetchWithTimeout(`${API}/repos/${owner}/${repo}/contents/${path}`, {
     method: 'PUT',
     headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
-  });
+  }, 30000);
   if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`);
   return res.json();
 }
@@ -649,11 +656,11 @@ async function ghPut(path, content, sha, message) {
 async function ghPutBinary(path, base64Data, message) {
   const { token, owner, repo, branch } = getSettings();
   const body = { message, content: base64Data, branch };
-  const res = await fetch(`${API}/repos/${owner}/${repo}/contents/${path}`, {
+  const res = await fetchWithTimeout(`${API}/repos/${owner}/${repo}/contents/${path}`, {
     method: 'PUT',
     headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
-  });
+  }, 30000);
   if (!res.ok) throw new Error(`上传图片失败 ${res.status}: ${await res.text()}`);
   return res.json();
 }
@@ -683,7 +690,11 @@ async function saveData(items, sha, message) {
 }
 
 async function getWriteBase() {
-  const items = getCachedItems() || [];
+  const { owner, repo, branch } = getSettings();
+  const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data.json?t=${Date.now()}`;
+  const rawRes = await fetchWithTimeout(rawUrl, {});
+  if (!rawRes.ok) throw new Error(`读取数据失败 ${rawRes.status}`);
+  const items = await rawRes.json();
   const meta = await ghGet('data.json');
   return { items, sha: meta.sha };
 }
@@ -1304,7 +1315,11 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
       for (let i = 0; i < _pendingImages.length; i++) {
         btn.textContent = `上传图片 ${i+1}/${_pendingImages.length}…`;
         const path = `images/${ts}_${i}.jpg`;
-        await fbStorage.ref(path).put(_pendingImages[i].blob, { contentType: 'image/jpeg' });
+        const uploadTask = fbStorage.ref(path).put(_pendingImages[i].blob, { contentType: 'image/jpeg' });
+        await Promise.race([
+          uploadTask,
+          new Promise((_, rej) => setTimeout(() => { uploadTask.cancel(); rej(new Error('图片上传超时，请检查网络后重试')); }, 60000))
+        ]);
         uploadedPaths.push({ provider: 'firebase', path });
       }
     }
