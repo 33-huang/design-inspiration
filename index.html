@@ -966,6 +966,9 @@ async function saveTagMgmt() {
     showToast('标签已保存', 'ok');
     renderAddTagArea([]);
     renderEditTagArea([]);
+    renderFilterModalContent();
+    const cached = getCachedItems();
+    if (cached) renderGallery(cached);
   } catch(e) { showToast('保存失败：' + e.message, 'err'); }
   btn.textContent = '保存标签'; btn.disabled = false;
 }
