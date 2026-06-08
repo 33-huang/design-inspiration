@@ -1379,7 +1379,6 @@ function openEdit(id) {
   document.getElementById('edit-id').value = id;
   document.getElementById('edit-title').value = item.title || '';
   document.getElementById('edit-analysis').value = item.analysis || '';
-  document.getElementById('edit-archive').value = item.archive || '';
   document.getElementById('edit-link').value = item.link || '';
   renderEditTagArea(item.tags || []);
   document.getElementById('editOverlay').classList.add('open');
@@ -1390,7 +1389,6 @@ async function saveEditItem() {
   const id       = parseInt(document.getElementById('edit-id').value);
   const title    = document.getElementById('edit-title').value.trim();
   const analysis = document.getElementById('edit-analysis').value.trim();
-  const archive  = document.getElementById('edit-archive').value.trim();
   const link     = document.getElementById('edit-link').value.trim();
   const tags     = getSelectedTags('editTagArea');
   if (!title || !analysis) { showToast('标题和分析不能为空', 'err'); return; }
@@ -1405,7 +1403,7 @@ async function saveEditItem() {
     const { items, sha } = await getWriteBase();
     const item = items.find(i => i.id === id);
     if (!item) throw new Error('找不到该条目');
-    Object.assign(item, { title, analysis, archive, link, tags });
+    Object.assign(item, { title, analysis, link, tags });
     await saveData(items, sha, `编辑灵感：${title}`);
     cacheItems(items); renderGallery(items);
     closeEdit(); showToast('已保存', 'ok');
