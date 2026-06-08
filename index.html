@@ -684,13 +684,13 @@ function resolveImg(src) {
   return `https://raw.githubusercontent.com/${owner}/${repo}/main/${src}`;
 }
 
+function decodeGitHubJson(b64) {
+  return JSON.parse(decodeURIComponent(escape(atob(b64.replace(/\n/g, '')))));
+}
+
 async function loadData() {
-  const { owner, repo, branch } = getSettings();
-  const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data.json?t=${Date.now()}`;
-  const rawRes = await fetch(rawUrl);
-  if (!rawRes.ok) throw new Error(`读取失败 ${rawRes.status}`);
-  const items = await rawRes.json();
   const meta = await ghGet('data.json');
+  const items = decodeGitHubJson(meta.content);
   return { items, sha: meta.sha };
 }
 
@@ -699,12 +699,8 @@ async function saveData(items, sha, message) {
 }
 
 async function getWriteBase() {
-  const { owner, repo, branch } = getSettings();
-  const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data.json?t=${Date.now()}`;
-  const rawRes = await fetchWithTimeout(rawUrl, {});
-  if (!rawRes.ok) throw new Error(`读取数据失败 ${rawRes.status}`);
-  const items = await rawRes.json();
   const meta = await ghGet('data.json');
+  const items = decodeGitHubJson(meta.content);
   return { items, sha: meta.sha };
 }
 
@@ -715,14 +711,11 @@ let tagGroups = [];
 let _tagsSha = null;
 
 async function loadTagsData() {
-  const { owner, repo, branch } = getSettings();
   try {
-    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/tags.json?t=${Date.now()}`;
-    const res = await fetch(rawUrl);
-    if (!res.ok) return;
-    const data = await res.json();
+    const meta = await ghGet('tags.json');
+    const data = decodeGitHubJson(meta.content);
     tagGroups = data.groups || [];
-    try { const meta = await ghGet('tags.json'); _tagsSha = meta.sha; } catch(e) {}
+    _tagsSha = meta.sha;
   } catch(e) { tagGroups = []; }
 }
 
