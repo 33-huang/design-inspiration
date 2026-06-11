@@ -223,6 +223,16 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
 .multi-preview { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
 .multi-preview::-webkit-scrollbar { display: none; }
 .multi-preview img { height: 88px; width: auto; border-radius: 6px; flex-shrink: 0; object-fit: cover; display: block; }
+.img-preview-item { position: relative; flex-shrink: 0; }
+.img-preview-item img { height: 88px; width: auto; border-radius: 6px; object-fit: cover; display: block; cursor: pointer; }
+.img-preview-del {
+  position: absolute; top: 3px; right: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(0,0,0,0.55); color: #fff;
+  border: none; cursor: pointer; font-size: 14px; line-height: 1;
+  display: flex; align-items: center; justify-content: center; padding: 0; z-index: 2;
+}
+.img-upload-area.has-image > input[type=file] { pointer-events: none; display: none; }
 
 /* ── Tag checkboxes ── */
 .tag-check-area { border: 1px solid var(--border); border-radius: 6px; background: var(--card); overflow: hidden; }
@@ -1370,15 +1380,44 @@ document.getElementById('f-image').addEventListener('change', async function() {
   const label = document.getElementById('uploadLabel');
   label.textContent = '压缩中…';
   try {
-    _pendingImages = await compressFilesForFirebase(files);
-    document.getElementById('multiPreview').innerHTML = _pendingImages.map(r => `<img src="${r.dataUrl}">`).join('');
-    label.style.display = 'none';
-    document.getElementById('uploadArea').classList.add('has-image');
+    const newImgs = await compressFilesForFirebase(files);
+    _pendingImages = [..._pendingImages, ...newImgs];
+    renderPreviewImages();
   } catch(e) {
     showToast('图片处理失败', 'err');
     label.textContent = '点击或拍照上传，可多选';
   }
 });
+
+function renderPreviewImages() {
+  document.getElementById('multiPreview').innerHTML = _pendingImages.map((r, i) => `
+    <div class="img-preview-item">
+      <img src="${r.dataUrl}" onclick="replacePreviewImg(${i})">
+      <button type="button" class="img-preview-del" onclick="removePreviewImg(${i})">×</button>
+    </div>`).join('');
+  const has = _pendingImages.length > 0;
+  document.getElementById('uploadArea').classList.toggle('has-image', has);
+  document.getElementById('uploadLabel').style.display = has ? 'none' : '';
+}
+
+function removePreviewImg(i) {
+  _pendingImages.splice(i, 1);
+  renderPreviewImages();
+}
+
+function replacePreviewImg(i) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = async function() {
+    const file = this.files[0]; if (!file) return;
+    try {
+      const [result] = await compressFilesForFirebase([file]);
+      _pendingImages[i] = result;
+      renderPreviewImages();
+    } catch(e) { showToast('图片处理失败', 'err'); }
+  };
+  inp.click();
+}
 
 function initCarousels() {
   document.querySelectorAll('.carousel-track').forEach(track => {
@@ -1429,9 +1468,7 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
     await saveData(items, sha, `添加灵感：${title}`);
     cacheItems(items); renderGallery(items);
     this.reset(); _pendingImages = [];
-    document.getElementById('multiPreview').innerHTML = '';
-    document.getElementById('uploadArea').classList.remove('has-image');
-    document.getElementById('uploadLabel').style.display = '';
+    renderPreviewImages();
     document.getElementById('uploadLabel').textContent = '点击或拍照上传，可多选';
     renderAddTagArea([]);
     showToast('✓ 已添加：' + title, 'ok');
@@ -1439,9 +1476,7 @@ document.getElementById('addForm').addEventListener('submit', async function(e) 
   } catch(e) {
     showToast('添加失败：' + e.message, 'err'); console.error(e);
     _pendingImages = [];
-    document.getElementById('multiPreview').innerHTML = '';
-    document.getElementById('uploadArea').classList.remove('has-image');
-    document.getElementById('uploadLabel').style.display = '';
+    renderPreviewImages();
     document.getElementById('uploadLabel').textContent = '点击或拍照上传，可多选';
   }
   btn.disabled = false; btn.textContent = '添加到灵感库';
@@ -1540,16 +1575,45 @@ document.getElementById('edit-image').addEventListener('change', async function(
   const label = document.getElementById('editUploadLabel');
   label.textContent = '压缩中…';
   try {
-    _editPendingImages = await compressFilesForFirebase(files);
-    document.getElementById('editMultiPreview').innerHTML = _editPendingImages.map(r => `<img src="${r.dataUrl}">`).join('');
-    label.style.display = 'none';
-    document.getElementById('editUploadArea').classList.add('has-image');
+    const newImgs = await compressFilesForFirebase(files);
+    _editPendingImages = [..._editPendingImages, ...newImgs];
+    renderEditPreviewImages();
     document.getElementById('editCurrentImgs').innerHTML = '';
   } catch(e) {
     showToast('图片处理失败', 'err');
     label.textContent = '上传新图片（将替换现有图片）';
   }
 });
+
+function renderEditPreviewImages() {
+  document.getElementById('editMultiPreview').innerHTML = _editPendingImages.map((r, i) => `
+    <div class="img-preview-item">
+      <img src="${r.dataUrl}" onclick="replaceEditPreviewImg(${i})">
+      <button type="button" class="img-preview-del" onclick="removeEditPreviewImg(${i})">×</button>
+    </div>`).join('');
+  const has = _editPendingImages.length > 0;
+  document.getElementById('editUploadArea').classList.toggle('has-image', has);
+  document.getElementById('editUploadLabel').style.display = has ? 'none' : '';
+}
+
+function removeEditPreviewImg(i) {
+  _editPendingImages.splice(i, 1);
+  renderEditPreviewImages();
+}
+
+function replaceEditPreviewImg(i) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = async function() {
+    const file = this.files[0]; if (!file) return;
+    try {
+      const [result] = await compressFilesForFirebase([file]);
+      _editPendingImages[i] = result;
+      renderEditPreviewImages();
+    } catch(e) { showToast('图片处理失败', 'err'); }
+  };
+  inp.click();
+}
 
 document.getElementById('editOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('editOverlay')) closeEdit();
