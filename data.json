@@ -118,5 +118,35 @@
       }
     ],
     "createdAt": "2026-06-09"
+  },
+  {
+    "id": 8,
+    "title": "拼接风格无厘头海报",
+    "analysis": "test",
+    "link": "",
+    "tags": [
+      "t1",
+      "t1780980070583",
+      "t19"
+    ],
+    "images": [
+      {
+        "provider": "firebase",
+        "path": "images/1781156686568_0.jpg"
+      },
+      {
+        "provider": "firebase",
+        "path": "images/1781156686568_1.jpg"
+      },
+      {
+        "provider": "firebase",
+        "path": "images/1781156686568_2.jpg"
+      },
+      {
+        "provider": "firebase",
+        "path": "images/1781156686568_3.jpg"
+      }
+    ],
+    "createdAt": "2026-06-11"
   }
 ]
