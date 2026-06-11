@@ -522,8 +522,7 @@ html, body { height: 100%; background: var(--bg); color: var(--fg); font-family:
       <div id="editCurrentImgs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"></div>
       <div class="img-upload-area" id="editUploadArea">
         <input type="file" id="edit-image" accept="image/*" multiple>
-        <div class="upload-label" id="editUploadLabel"><span>📷</span>上传新图片（将替换现有图片）</div>
-        <div class="multi-preview" id="editMultiPreview"></div>
+        <div class="upload-label" id="editUploadLabel"><span>📷</span>添加更多图片</div>
       </div>
     </div>
     <div class="modal-field">
@@ -1502,7 +1501,8 @@ function closeCardMenu() {
 // ─────────────────────────────────────────────
 // Edit item
 // ─────────────────────────────────────────────
-let _editPendingImages = [];
+// _editImages: { type:'existing', data, url } | { type:'pending', blob, dataUrl }
+let _editImages = [];
 
 function openEdit(id) {
   const cached = getCachedItems();
@@ -1512,19 +1512,42 @@ function openEdit(id) {
   document.getElementById('edit-title').value = item.title || '';
   document.getElementById('edit-analysis').value = item.analysis || '';
   document.getElementById('edit-link').value = item.link || '';
-  // 显示现有图片
-  const imgs = (item.images || (item.image ? [item.image] : [])).map(resolveImg).filter(Boolean);
-  const currentEl = document.getElementById('editCurrentImgs');
-  currentEl.innerHTML = imgs.map(src => `<img src="${src}" style="height:72px;width:auto;border-radius:6px;object-fit:cover;">`).join('');
-  // 重置上传区
-  _editPendingImages = [];
-  document.getElementById('editMultiPreview').innerHTML = '';
+  const imgDataList = item.images || (item.image ? [item.image] : []);
+  _editImages = imgDataList.map(data => ({ type: 'existing', data, url: resolveImg(data) })).filter(e => e.url);
+  renderEditImages();
   document.getElementById('editUploadArea').classList.remove('has-image');
   document.getElementById('editUploadLabel').style.display = '';
   renderEditTagArea(item.tags || []);
   document.getElementById('editOverlay').classList.add('open');
 }
 function closeEdit() { document.getElementById('editOverlay').classList.remove('open'); }
+
+function renderEditImages() {
+  document.getElementById('editCurrentImgs').innerHTML = _editImages.map((img, i) => `
+    <div class="img-preview-item">
+      <img src="${img.type === 'existing' ? img.url : img.dataUrl}" onclick="replaceEditImg(${i})">
+      <button type="button" class="img-preview-del" onclick="removeEditImg(${i})">×</button>
+    </div>`).join('');
+}
+
+function removeEditImg(i) {
+  _editImages.splice(i, 1);
+  renderEditImages();
+}
+
+function replaceEditImg(i) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = async function() {
+    const file = this.files[0]; if (!file) return;
+    try {
+      const [result] = await compressFilesForFirebase([file]);
+      _editImages[i] = { type: 'pending', blob: result.blob, dataUrl: result.dataUrl };
+      renderEditImages();
+    } catch(e) { showToast('图片处理失败', 'err'); }
+  };
+  inp.click();
+}
 
 async function saveEditItem() {
   const id       = parseInt(document.getElementById('edit-id').value);
@@ -1536,19 +1559,21 @@ async function saveEditItem() {
   const btn = document.getElementById('editSaveBtn');
   btn.textContent = '保存中…'; btn.disabled = true;
   try {
-    let newImages = null;
-    if (_editPendingImages.length) {
-      const ts = Date.now();
-      newImages = [];
-      for (let i = 0; i < _editPendingImages.length; i++) {
-        btn.textContent = `上传图片 ${i+1}/${_editPendingImages.length}…`;
-        const path = `images/${ts}_${i}.jpg`;
-        const uploadTask = fbStorage.ref(path).put(_editPendingImages[i].blob, { contentType: 'image/jpeg' });
+    const ts = Date.now();
+    let uploadIdx = 0;
+    const finalImages = [];
+    for (const img of _editImages) {
+      if (img.type === 'existing') {
+        finalImages.push(img.data);
+      } else {
+        btn.textContent = `上传图片 ${++uploadIdx}…`;
+        const path = `images/${ts}_${uploadIdx}.jpg`;
+        const uploadTask = fbStorage.ref(path).put(img.blob, { contentType: 'image/jpeg' });
         await Promise.race([
           uploadTask,
           new Promise((_, rej) => setTimeout(() => { uploadTask.cancel(); rej(new Error('图片上传超时')); }, 60000))
         ]);
-        newImages.push({ provider: 'firebase', path });
+        finalImages.push({ provider: 'firebase', path });
       }
     }
     btn.textContent = '保存中…';
@@ -1560,9 +1585,7 @@ async function saveEditItem() {
     const { items, sha } = await getWriteBase();
     const item = items.find(i => i.id === id);
     if (!item) throw new Error('找不到该条目');
-    const update = { title, analysis, link, tags };
-    if (newImages) update.images = newImages;
-    Object.assign(item, update);
+    Object.assign(item, { title, analysis, link, tags, images: finalImages.length ? finalImages : null });
     await saveData(items, sha, `编辑灵感：${title}`);
     cacheItems(items); renderGallery(items);
     closeEdit(); showToast('已保存', 'ok');
@@ -1576,44 +1599,14 @@ document.getElementById('edit-image').addEventListener('change', async function(
   label.textContent = '压缩中…';
   try {
     const newImgs = await compressFilesForFirebase(files);
-    _editPendingImages = [..._editPendingImages, ...newImgs];
-    renderEditPreviewImages();
-    document.getElementById('editCurrentImgs').innerHTML = '';
+    _editImages = [..._editImages, ...newImgs.map(r => ({ type: 'pending', blob: r.blob, dataUrl: r.dataUrl }))];
+    renderEditImages();
+    label.textContent = '添加更多图片';
   } catch(e) {
     showToast('图片处理失败', 'err');
-    label.textContent = '上传新图片（将替换现有图片）';
+    label.textContent = '添加更多图片';
   }
 });
-
-function renderEditPreviewImages() {
-  document.getElementById('editMultiPreview').innerHTML = _editPendingImages.map((r, i) => `
-    <div class="img-preview-item">
-      <img src="${r.dataUrl}" onclick="replaceEditPreviewImg(${i})">
-      <button type="button" class="img-preview-del" onclick="removeEditPreviewImg(${i})">×</button>
-    </div>`).join('');
-  const has = _editPendingImages.length > 0;
-  document.getElementById('editUploadArea').classList.toggle('has-image', has);
-  document.getElementById('editUploadLabel').style.display = has ? 'none' : '';
-}
-
-function removeEditPreviewImg(i) {
-  _editPendingImages.splice(i, 1);
-  renderEditPreviewImages();
-}
-
-function replaceEditPreviewImg(i) {
-  const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = 'image/*';
-  inp.onchange = async function() {
-    const file = this.files[0]; if (!file) return;
-    try {
-      const [result] = await compressFilesForFirebase([file]);
-      _editPendingImages[i] = result;
-      renderEditPreviewImages();
-    } catch(e) { showToast('图片处理失败', 'err'); }
-  };
-  inp.click();
-}
 
 document.getElementById('editOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('editOverlay')) closeEdit();
